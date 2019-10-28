@@ -1,1 +1,15 @@
-abc = a + b
+abc=a+b
+while >= cdfs(ads, adsda)
+def a = abc#blabla
+'ahoj jak se mas?\n ja \t se mam\" " " \Z celkem dobre \\ řetězec'
+""" asdasdas
+a
+asdasdasd
+as
+d
+asd
+as
+d
+as
+as
+dasdadaas a"" asdasdasd """

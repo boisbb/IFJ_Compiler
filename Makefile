@@ -1,10 +1,9 @@
+CC = gcc
 CFLAGS=-std=c99 -Wall -Wextra -g
-OBJ = scanner.o strings.o
-scanner: $(OBJ)
-	gcc $(CFLAGS) $(OBJ) -o scanner
-scanner.o: scanner.c
-	gcc $(CFLAGS) -c scanner.c
-strings.o: strings.c strings.h
-	gcc $(CFLAGS) -c strings.c
+OBJ = scanner.o strings.o stack.o
+TARGET = scanner
+
+$(TARGET): $(OBJ)
+	$(CC) $(CFLAGS) $(OBJ) -o $(TARGET)
 clean:
-	rm *.o scanner
+	rm $(OBJ) $(TARGET)

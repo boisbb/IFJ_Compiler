@@ -1,40 +1,48 @@
-// Helping module for dynamic allocation of string types //
-
-#include <stdio.h>
-#include <stdlib.h>
 #include <malloc.h>
 #include "strings.h"
 
 #define STR_SIZE 8
 
+int str_init(String *str)
+{
+	if ((str->content = malloc(sizeof(char) * STR_SIZE)) == NULL)
+		return 0;
 
-// Creating an empty dynamic string, the string's size is alligned to 8
-int str_init(String *str){
-  if ((str->contents = malloc(sizeof(char) * STR_SIZE)) == NULL){
-    return 0;
-  }
-  str->size = STR_SIZE;
-  str->asize = 0;
-  str->contents[str->asize] = '\0';
-  return 1;
+	str->size = STR_SIZE;
+	str->asize = 0;
+	str->content[str->asize] = '\0';
+	return 1;
 }
 
-int str_add(String *str, char new_char){
+int str_add(String *str, char new_char)
+{
+	if (str->size < str->asize)
+		return 0;
 
-  if (str->size < str->asize) {
-    printf("Incorrect values in dyn str\n");
-    return 0;
-  }
+	if (str->size == str->asize + 1)
+	{
+		if ((str->content = realloc(str->content, str->size + STR_SIZE)) == NULL)
+			return 0;
+		str->size += STR_SIZE;
+	}
+	str->content[str->asize] = new_char;
+	str->asize++;
+	str->content[str->asize] = '\0';
+	return 1;
+}
 
-  if (str->size == str->asize) {
-    if ((str->contents = realloc(str->contents, str->size + STR_SIZE)) == NULL) {
-      printf("Reallocation in str_add FAILED\n");
-      return 0;
-    }
-    str->size += STR_SIZE;
-  }
-  str->contents[str->asize] = new_char;
-  str->asize += 1;
-  str->contents[str->asize] = '\0';
-  return 1;
+char str_pop(String *str)
+{
+	str->asize--;
+	char c = str->content[str->asize];
+	str->content[str->asize] = '\0';
+	return c;
+}
+
+void str_free(String *str)
+{
+	free(str->content);
+	str->content = NULL;
+	str->asize = 0;
+	str->size = 0;
 }

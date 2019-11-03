@@ -1,7 +1,10 @@
 abc=a+b
 while >= cdfs(ads, adsda)
 def a = abc#blabla
-'ahoj jak se mas?\n ja \t se mam\" " " \Z celkem dobre \\ řetězec'
+b = 5246542.0515
+c=10.0e3
+d=10.0E-3
+'ahoj jak se mas?\n ja \t se mam\" " " \Z celkem dobre \\ řetězec\x23'
 """ asdasdas
 a
 asdasdasd
@@ -13,3 +16,15 @@ d
 as
 as
 dasdadaas a"" asdasdasd """
+
+def fun(i):
+  while i>0:
+     i = i - 1
+     print(i)
+     for i in b:
+        a = -s + a
+  print('a')
+
+fun(x)
+
+d=10.0E-3

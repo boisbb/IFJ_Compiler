@@ -1,0 +1,30 @@
+P plus 
+M minus
+MUL multiply
+DEV devide
+LB left bracket
+RB right bracket
+COM comma
+COL colon
+TAB tab
+E equals/assignment
+EQ equality
+N neagtion
+NE not equal
+L lesser
+LE less or equal
+G greater
+GE greater or equal
+VAR variable
+INT int
+FLO float
+FLE float_e
+FLEN float_en
+BC1 block comment in 1 
+BC2 block comment in 2
+BC block comment
+BCO1 block comment out 1
+BCO2 block comment out 2
+LC line comment
+I indentation
+STRINGS -> to be added

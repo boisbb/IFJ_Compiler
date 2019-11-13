@@ -1,9 +1,10 @@
 CC = gcc
 CFLAGS=-std=c99 -Wall -Wextra -g
-OBJ = scanner.o strings.o stack.o
-TARGET = scanner
+OBJ1 = test_main.o scanner.o strings.o stack.o sym_tab.o
+TARGET1 = test_main
 
-$(TARGET): $(OBJ)
-	$(CC) $(CFLAGS) $(OBJ) -o $(TARGET)
+$(TARGET1): $(OBJ1)
+	$(CC) $(CFLAGS) $(OBJ1) -o $(TARGET1)
+
 clean:
-	rm $(OBJ) $(TARGET)
+	rm $(OBJ1) $(TARGET1)

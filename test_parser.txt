@@ -1,0 +1,4 @@
+automat = 'yo mom gay'
+seks = 69
+hovno = seks
+hovnomat = neexistujicipromenna

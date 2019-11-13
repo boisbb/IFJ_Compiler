@@ -1,9 +1,13 @@
 #include "sym_tab.h"
+#include "error.h"
 
+#include <stdlib.h>
+#include <string.h>
+#include <stdint.h> //uint32_t
 
 // HASHING FUNCTION //
 unsigned int symtab_hash_function(const char *str) {
-  __uint32_t h=0;     // musí mít 32 bitů
+  uint32_t h=0;     // musí mít 32 bitů
   const unsigned char *p;
   for(p=(const unsigned char*)str; *p!='\0'; p++)
       h = 65599*h + *p;

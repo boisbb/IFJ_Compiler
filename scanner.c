@@ -1,90 +1,13 @@
-#include <stdio.h>
-#include <stdlib.h>//malloc, strtol, strtod
-#include <stdbool.h>
-#include <ctype.h>//isalpha, isalnum, isdigit, isxdigit
-#include <string.h>//strcpy, strcmp
-#include <limits.h>//INT_MAX
-
-
-#include "error.h"
-#include "strings.h"
-#include "stack.h"
+#include "scanner.h"
 
 /////// CONSTANTS ////
 const char *keywords[] = {"def", "else", "if", "None", "pass", "return", "while"};
 
-/////// STATES ///////
-#define STATE_INITIAL 259
-
-#define STATE_EQUALS 260
-#define STATE_GREATER 261
-#define STATE_LESSER 262
-#define STATE_NEGATION 263
-
-#define STATE_INDENTATION 267
-
-#define STATE_VARIABLE 268
-
-#define STATE_STRING 269
-#define STATE_STRING_SPECIAL 270
-#define STATE_STRING_HEX1 271
-#define STATE_STRING_HEX2 272
-
-#define STATE_LINE_COMMENT 275
-#define STATE_BLOCK_COMMENT_IN1 276
-#define STATE_BLOCK_COMMENT_IN2 277
-#define STATE_BLOCK_COMMENT 278
-#define STATE_BLOCK_COMMENT_OUT1 279
-#define STATE_BLOCK_COMMENT_OUT2 280
-
-#define STATE_INT 283
-#define STATE_FLOAT 284
-#define STATE_FLOAT_E 285
-#define STATE_FLOAT_EN 286
-/////////////////////
-
-//// ENUM OF TYPES ///
-typedef enum
-{
-	TypeOperatorPlus,
-	TypeOperatorMinus,
-	TypeOperatorMul,
-	TypeOperatorDiv,
-	TypeAssignment,
-	TypeEquality,
-	TypeGreater,
-	TypeGreaterEq,
-	TypeLesser,
-	TypeLesserEq,
-	TypeNegation,
-	TypeUnEquality,
-	TypeLeftBracket,
-	TypeRightBracket,
-	TypeColon,
-	TypeComma,
-	TypeTab,
-	TypeNewLine,
-	TypeKeyword,
-	TypeVariable,
-	TypeString,
-	TypeInt,
-	TypeFloat,
-	TypeIndent,
-	TypeDedend
-} Type;
-/////////////////////
 
 /// JUST FOR TESTING //
 const char *opNames[] = {"+", "-", "*", "/", "=", "==", ">", ">=", "<", "<=", "!", "!=", "(", ")", ":", ",", "tab", "new line", "keyword", "variable", "string", "int", "float", "indent", "dedent"};
 //////////////////////
 
-// TOKEN STRUCTURE ///
-typedef struct
-{
-	Type type;
-	void *data;
-} Token;
-////////////////////
 
 ///// GLOBALS /////
 bool first_token = true;
@@ -632,7 +555,8 @@ int get_next_token(Token *token)
 		return 0;
 }
 
-int main()
+
+int scanner_main()
 {
 	Token token = {};
 	int err_num = 0;
@@ -642,7 +566,7 @@ int main()
 	while((err_num = get_next_token(&token)) == 0)
 	{
 		if(token.type == TypeString || token.type == TypeVariable || token.type == TypeKeyword)
-			printf("Token type: %s | Token data: %s \n", opNames[token.type], (char*)token.data);
+			printf("AToken type: %s | Token data: %s \n", opNames[token.type], (char*)token.data);
 		else if(token.type == TypeInt)
 			printf("Token type: %s | Token data: %i \n", opNames[token.type], *(int*)token.data);
 		else if(token.type == TypeFloat)

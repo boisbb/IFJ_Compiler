@@ -1,0 +1,79 @@
+<prog> -> <body>
+<prog> -> <fction_start> INDENT <body> DEDENT <body>
+<body> -> <command> EOL <body>
+<body> -> EPSilon
+<fction_start> -> def fctionNAME(<arg> : EOL
+<arg> -> ID <arg_n>)
+<arg_n> -> , ID <args>
+<arg_n> -> EPSilon
+<command> -> <statement>
+<command> -> ID = <value>
+<statement> -> <if_statem>
+<statement> -> <while_statem>
+<if_statem> -> if expr : EOL INDENT <stat_command> EOL DEDENT else : EOL INDENT <stat_command> EOL DEDENT
+<while_statem> -> while expr : EOL INDENT <stat_command> EOL DEDENT
+<stat_command> -> EPSilon
+<stat_command> -> <command> <stat_command>
+<value> -> expr
+<value> -> fctionNAME(<arg>
+<value> -> inputs()
+<value> -> inputi()
+<value> -> inputf()
+<value> -> print(<term>)
+<value> -> len(ID)
+<value> -> len(STR)
+<value> -> substr(STR, INT, INT)
+<value> -> ord(STR, INT)
+<value> -> chr(INT)
+<term> -> ID <term_n>
+<term> -> <type> <term_n>
+<type> -> STR
+<type> -> INT
+<type> -> CHAR
+<term_n> -> , <term>
+<term_n> -> EPSilon
+
+
+:::HEAD FOR TOOL:::
+tokens:
+a = fctionNAME(
+b = :
+c = )
+d = ,
+e = =
+
+
+%token EOL INDENT DEDENT def a b end c d ID expr if else e while inputs inputi inputf print lenID lenSTR substr ord chr STR INT CHAR
+%% /* LL(1) */
+prog : body
+     | fction_start INDENT body DEDENT body ;
+body : command EOL body ;
+fction_start : def a arg b EOL ;
+arg : ID arg_n c ;
+arg_n : d ID arg_n
+      | /* eps */ ;
+command : statement
+        | ID e value ;
+statement : if_statem
+          | while_statem ;
+if_statem : if expr b EOL INDENT stat_command EOL DEDENT else b EOL INDENT stat_command EOL DEDENT ;
+while_statem : while expr b EOL INDENT stat_command EOL DEDENT ;
+stat_command : /* eps */
+             | command stat_command ;
+value : expr
+      | a arg
+      | inputs
+      | inputi
+      | print term
+      | lenID
+      | lenSTR
+      | substr
+      | ord
+      | chr ;
+term : ID term_n
+     | type term_n ;
+type : STR
+     | INT
+     | CHAR ;
+term_n : d term
+       | /* eps */ ;

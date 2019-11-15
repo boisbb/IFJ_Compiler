@@ -77,16 +77,40 @@ void value(Token *token){
         return;
   }
 
+}
 
+int fction(Token *token){
+  if (GET_TOKEN_CHECK_EOF(token) || TOKEN_TYPE_NEEDED_CHECK(token->type, TypeNewLine)) {DEBUG_PRINT("Reached EOF or Newline where it shouldn't be\n"); exit(1);}
 
+  //tady bude muset být cyklus, parametrů může být více
+  if(token->type == TypeVariable){
+    printf("promenna\n");
+  }
+  //toto bude konec cyklu
+  if(token->type == TypeRightBracket){
+    printf("konec\n");
+  }
+
+  //pak bude asi funkce fction_body
 }
 
 
-bool command(Token *token){
+//nemůže být bool kvůli mallocu
+int command(Token *token){
   if (TOKEN_TYPE_NEEDED_CHECK(token->type, TypeVariable)) {
 
     Token *token_n = malloc(sizeof(Token));
+    if(token_n == NULL){
+      return 99;
+    }
+
     if (GET_TOKEN_CHECK_EOF(token_n)) {DEBUG_PRINT("Reached EOF where it shouldn't be\n"); exit(1);}
+
+    //začátek funkce
+    if(TOKEN_TYPE_NEEDED_CHECK(token_n->type, TypeLeftBracket)){
+      fction(token_n);
+
+    }
 
     if (TOKEN_TYPE_NEEDED_CHECK(token_n->type, TypeAssignment)) {
 
@@ -103,8 +127,9 @@ bool command(Token *token){
       SYMTAB_ADD_VALUE(table, token, token_n);
 
     }
+
   }
-  return false;
+  return 0;
 }
 
 void body(Token *token){
@@ -132,6 +157,10 @@ void body(Token *token){
 // <prog> -> <fction_start> INDENT <body> DEDENT <body>
 int prog() {
   Token *token = malloc(sizeof(Token));
+  if(token == NULL){
+    return 99;
+  }
+
   scanner_init();
 
   if(GET_TOKEN_CHECK_EOF(token)){
@@ -140,6 +169,9 @@ int prog() {
   }
 
   table = malloc(sizeof(hSymtab));
+  if(table == NULL){
+    return 99;
+  }
   symtab_init(table);
 
 

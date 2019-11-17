@@ -27,8 +27,10 @@ unsigned int symtab_hash_function(const char *str);
 
 void symtab_init(hSymtab *sym_tab);
 
+int symtab_it_get_type(hSymtab_it *symtab_it);
+
 hSymtab_it *symtab_it_position(char *searched_for, hSymtab *sym_tab);
 
 void symtab_add_it(hSymtab *sym_tab, Token *token);
 
-void symtab_add_value(hSymtab *sym_tab, Token *token_var,Token *token_val);
+void symtab_add_value(hSymtab *sym_tab, hSymtab_it *symtab_it,Token *token_val);

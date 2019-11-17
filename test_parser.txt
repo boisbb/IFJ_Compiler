@@ -1,4 +1,1 @@
-automat = 'yo mom gay'
-seks = 69
-hovno = seks
-hovnomat = neexistujicipromenna
+aha = substr('auto', 1, 2)

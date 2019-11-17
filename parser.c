@@ -13,6 +13,11 @@ extern char current_line[1000];
 #define WHILE_STAT 27
 #define FCTDEF 28
 
+// FUNCTIONS //
+#define LEN 30
+#define SUBSTR 31
+#define USERDEF 35
+
 #define GET_TOKEN_CHECK_EOF(token) \
             (get_next_token(token) == EOF) ? 1 : 0 \
 
@@ -36,6 +41,9 @@ extern char current_line[1000];
             } \
           }) \
 
+#define WHICH_PREDEF_FCTION(token) \
+            (!(strcmp((char*)token->data, "len"))) ? LEN : ((!(strcmp((char*)token->data, "substr"))) ? SUBSTR : USERDEF)  \
+
 
 
 #define TOKEN_CHECK_DATA_TYPE(token)({ \
@@ -54,10 +62,85 @@ extern char current_line[1000];
             symtab_add_it(sym_tab, token); \
           } \
 
+#define FCT_LEN(t_string) \
+          int length = strlen(t_string); \
+          token_n->type = TypeInt; \
+          token_n->data = realloc(token_n->data, sizeof(int)); \
+          *(int*)token_n->data = length; \
 
-#define SYMTAB_ADD_VALUE(sym_tab, token, token_n) \
-          if ((*sym_tab)[symtab_hash_function((char*)token->data)] != NULL && token != NULL && token_n != NULL) { \
-            symtab_add_value(sym_tab, token, token_n); \
+
+#define FCT_SUBSTR(token_n) \
+          char *s_string = malloc(sizeof(char) * strlen((char*)token_n->data)); \
+          strcpy(s_string, (char*)token_n->data); \
+          if((!GET_TOKEN_CHECK_EOF(token_n)) && TOKEN_TYPE_NEEDED_CHECK(token_n->type, TypeComma)){ \
+            if((!GET_TOKEN_CHECK_EOF(token_n)) && TOKEN_TYPE_NEEDED_CHECK(token_n->type, TypeInt)) { \
+              \
+              int start = *(int*)token_n->data; \
+              if((!GET_TOKEN_CHECK_EOF(token_n)) && TOKEN_TYPE_NEEDED_CHECK(token_n->type, TypeComma)) { \
+                if((!GET_TOKEN_CHECK_EOF(token_n)) && TOKEN_TYPE_NEEDED_CHECK(token_n->type, TypeInt)) { \
+                  \
+                  int length = *(int*)token_n->data; \
+                  \
+                  if (length <= 0) { \
+                    DEBUG_PRINT("SYNTAX ERROR: Incorrect parameters\n"); \
+                    exit(1); \
+                  } \
+                  \
+                  char *new_str = malloc(sizeof(char) * length); \
+                  token_n->data = realloc(token_n->data, sizeof(char) * length); \
+                  token_n->type = TypeString; \
+                  for (int i = 0; i + start < strlen(s_string); i++){ \
+                    new_str[i] = s_string[i + start]; \
+                  } \
+                  new_str[length] = '\0'; \
+                  strcpy((char*)token_n->data, new_str); \
+                } \
+              } \
+            } \
+          } \
+
+#define SYMTAB_ADD_VALUE(table, sym_tab_it, token, token_n) \
+          if (GET_TOKEN_CHECK_EOF(token) || TOKEN_TYPE_NEEDED_CHECK(token->type, TypeNewLine)) { \
+            symtab_add_value(table, sym_tab_it, token_n); \
+          } \
+          else if (TOKEN_TYPE_NEEDED_CHECK(token->type, TypeLeftBracket)){ \
+            \
+            if (WHICH_PREDEF_FCTION(token_n) == LEN) { \
+              \
+              if((!GET_TOKEN_CHECK_EOF(token_n)) && TOKEN_TYPE_NEEDED_CHECK(token_n->type, TypeString)){ \
+                \
+                FCT_LEN((char*)token_n->data); \
+                symtab_add_value(table, sym_tab_it, token_n); \
+              } \
+              else if(TOKEN_TYPE_NEEDED_CHECK(token_n->type, TypeVariable)){ \
+                \
+                hSymtab_it *item; \
+                if ((item = symtab_it_position((char*)token_n->data, table)) == NULL){DEBUG_PRINT("SYNTAX ERROR: function recieved incorrect parameters\n"); exit(1);} \
+                if (symtab_it_get_type(item) == TypeString) { \
+                  \
+                  FCT_LEN(item->data->value_str); \
+                  symtab_add_value(table, sym_tab_it, token_n); \
+                } \
+                else { \
+                  DEBUG_PRINT("SYNTAX ERROR: function recieved incorrect parameters\n"); \
+                  exit(1); \
+                } \
+              } \
+              else { \
+                DEBUG_PRINT("SYNTAX ERROR: function recieved incorrect parameters\n"); \
+                exit(1); \
+              } \
+            } \
+            else if(WHICH_PREDEF_FCTION(token_n) == SUBSTR) { \
+              if((!GET_TOKEN_CHECK_EOF(token_n)) && TOKEN_TYPE_NEEDED_CHECK(token_n->type, TypeString)){ \
+                \
+                FCT_SUBSTR(token_n); \
+                symtab_add_value(table, sym_tab_it, token_n); \
+              } \
+              else if(TOKEN_TYPE_NEEDED_CHECK(token_n->type, TypeVariable)){ \
+                \
+              } \
+            } \
           } \
 
 
@@ -66,9 +149,6 @@ extern hSymtab *table = NULL;
 
 void value(Token *token){
   if (GET_TOKEN_CHECK_EOF(token) || TOKEN_TYPE_NEEDED_CHECK(token->type, TypeNewLine)) {DEBUG_PRINT("Reached EOF or Newline where it shouldn't be\n"); exit(1);}
-
-  if (token->type == TypeString) {
-  }
 
   if (TOKEN_TYPE_NEEDED_CHECK(token->type, TypeInt)
       || TOKEN_TYPE_NEEDED_CHECK(token->type, TypeString)
@@ -124,7 +204,7 @@ int command(Token *token){
       free(token_n->data);
       value(token_n);
 
-      SYMTAB_ADD_VALUE(table, token, token_n);
+      SYMTAB_ADD_VALUE(table, symtab_it_position((char*)token->data, table), token, token_n);
 
     }
 

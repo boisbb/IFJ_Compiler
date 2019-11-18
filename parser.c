@@ -11,7 +11,7 @@ extern char current_line[1000];
 #define UNWANTED_TYPE 0
 #define IF_STAT 26
 #define WHILE_STAT 27
-#define FCTDEF 28
+//#define FCTDEF 28 -> není potřeba, (keyword def)
 
 // FUNCTIONS //
 #define LEN 30
@@ -113,6 +113,59 @@ void body(Token *token){
   }
 }
 
+int fction_params(Token *token){
+  //potřebuju nový token, teď mám načtenou levou závorku
+  if (GET_TOKEN_CHECK_EOF(token) || TOKEN_TYPE_NEEDED_CHECK(token->type, TypeNewLine)) {DEBUG_PRINT("Reached EOF or Newline where it shouldn't be\n"); exit(1);}
+  while(!TOKEN_TYPE_NEEDED_CHECK(token->type, TypeRightBracket)){
+    if(TOKEN_TYPE_NEEDED_CHECK(token->type, TypeVariable)){
+      printf("var\n");
+      //zapsat parametry do tabulky bez typu
+
+    }
+    else if(TOKEN_TYPE_NEEDED_CHECK(token->type, TypeComma)){
+      printf("comma\n");
+    }
+    else{
+      return 1;
+    }
+    if (GET_TOKEN_CHECK_EOF(token) || TOKEN_TYPE_NEEDED_CHECK(token->type, TypeNewLine)) {DEBUG_PRINT("Reached EOF or Newline where it shouldn't be\n"); exit(1);}
+  }
+  return 0;
+}
+
+int fction_start(Token *token){
+  //return 1 = chyba
+  if (GET_TOKEN_CHECK_EOF(token) || TOKEN_TYPE_NEEDED_CHECK(token->type, TypeNewLine)) {DEBUG_PRINT("Reached EOF or Newline where it shouldn't be\n"); exit(1);}
+
+  //zacatek funkce
+  if(TOKEN_TYPE_NEEDED_CHECK(token->type, TypeVariable)){
+    Token *fction_name = token;
+
+    //kontrola, jeslti následuje závorka a jestli není EOF
+    if (GET_TOKEN_CHECK_EOF(token)) {DEBUG_PRINT("Reached EOF where it shouldn't be\n"); exit(1);}
+    if(TOKEN_TYPE_NEEDED_CHECK(token->type, TypeLeftBracket)){
+      //kontrola jeslti funcke s tímto jménem není už v tabulce
+      if(symtab_it_position((char*)token->data, table) == NULL){
+        //printf("dobrý\n");
+        fction_name->type = TypeFunc;
+        symtab_add_it(table, fction_name); //přidám do tabulky název funcke
+        if(fction_params(token) != 0){
+          return 1;
+        }
+        if (GET_TOKEN_CHECK_EOF(token)) {DEBUG_PRINT("Reached EOF where it shouldn't be\n"); exit(1);}
+        if(TOKEN_TYPE_NEEDED_CHECK(token->type, TypeColon)){
+          printf("spravně\n");
+        }
+        //fction_body();
+
+      }
+      else{
+        return 1; //funcke už v tabulce je
+      }
+    }
+  }
+}
+
 // FOR NOW EQUAL TO <prog>
 // <prog> -> <body>
 // <prog> -> <fction_start> INDENT <body> DEDENT <body>
@@ -131,14 +184,14 @@ int prog() {
 
 
 
-/*
-  if (TOKEN_TYPE_NEEDED_CHECK(token->type, FCTDEF)) {
-    return 1;
+
+  if (strcmp((char*)token->data, "def") == 0) {
+    fction_start(token); //kontrolovat, co to vrátilo, kvůli returnům
+    return 0;
   }
   else {
     body(token);
   }
-*/
 
   return 0;
 }

@@ -1,12 +1,14 @@
 #ifndef STRINGS_H
 #define STRINGS_H
 
+#include <string.h>
+
 // Helping module for dynamic allocation of string types //
 
 typedef struct
 {
 	char *content;            /// string
-	int size;                 /// size of strings
+	size_t size;                 /// size of strings
 	int asize;                /// actual size of string
 } String;
 
@@ -14,10 +16,16 @@ typedef struct
 int str_init(String *str);
 
 // Adds char to end of string.
-int str_add(String *str, char new_char);
+int str_pushc(String *str, char new_char);
 
-//delete last char, return that char
+// Append string
+int str_push(String *str, char *new_str);
+
+// Delete last char, return that char
 char str_pop(String *str);
+
+// Clear content, memory remains allocated
+void str_clear(String *str);
 
 // Dealloc memory and set string size to 0
 void str_free(String *str);

@@ -1,5 +1,5 @@
 #include "sym_tab.h"
-
+#include "error.h"
 
 // HASHING FUNCTION //
 unsigned int symtab_hash_function(const char *str) {

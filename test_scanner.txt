@@ -28,3 +28,4 @@ def fun(i):
 fun(x)
 
 d=10.0E-3
+_n_n <> 'afddasfs'

@@ -1,6 +1,5 @@
 #include "scanner.h"
 
-#include <stdio.h>//fgetc, stdin, EOF, ungetc
 #include <stdlib.h>//malloc, strtol, strtod
 #include <stdbool.h>
 #include <ctype.h>//isalpha, isalnum, isdigit, isxdigit
@@ -48,6 +47,7 @@ const char *keywords[] = {"def", "else", "if", "None", "pass", "return", "while"
 /////////////////////
 
 ///// GLOBALS /////
+FILE *_stream;
 bool first_token = true;
 Stack stack = {};
 unsigned space_count = 0;
@@ -55,12 +55,18 @@ unsigned space_count = 0;
 
 int scanner_init()
 {
+	_stream = stdin;
 	return stack_init(&stack) && stack_push(&stack, 0);
 }
 
 void scanner_free()
 {
 	stack_free(&stack);
+}
+
+void scanner_set_stream(FILE *stream)
+{
+	_stream = stream;
 }
 
 int get_next_token(Token *token)
@@ -71,7 +77,7 @@ int get_next_token(Token *token)
 	String str;
 	int c;
 	bool break_while = false;
-	while(!break_while && (c = fgetc(stdin)) != EOF)
+	while(!break_while && (c = fgetc(_stream)) != EOF)
 	{
 		switch(state)
 		{
@@ -97,10 +103,10 @@ int get_next_token(Token *token)
 				{
 					continue;
 				}
-				else if(isalpha(c) && first_token)
+				else if((isalpha(c) || c == '_') && first_token)
 				{
 					first_token = false;
-					ungetc(c, stdin);
+					ungetc(c, _stream);
 					if(stack.content[stack.top] > 0)
 					{
 						stack_pop(&stack);
@@ -158,11 +164,11 @@ int get_next_token(Token *token)
 					token->type = TypeComma;
 					break_while = true;
 				}
-				else if(c == '\t')
+				/*else if(c == '\t')
 				{
 					token->type = TypeTab;
 					break_while = true;
-				}
+				}*/
 				else if(c == '>')
 				{
 					state = STATE_GREATER;
@@ -193,15 +199,15 @@ int get_next_token(Token *token)
 				{
 					if(!str_init(&str))
 						return ERROR_INTERNAL;
-					if(!str_add(&str, c))
+					if(!str_pushc(&str, c))
 						return ERROR_INTERNAL;
 					state = STATE_INT;
 				}
-				else if(isalpha(c) && !first_token)
+				else if((isalpha(c) || c == '_') && !first_token)
 				{
 					if(!str_init(&str))
 						return ERROR_INTERNAL;
-					if(!str_add(&str, c))
+					if(!str_pushc(&str, c))
 						return ERROR_INTERNAL;
 					state = STATE_VARIABLE;
 				}
@@ -223,7 +229,7 @@ int get_next_token(Token *token)
 				}
 				else
 				{
-					ungetc(c, stdin);
+					ungetc(c, _stream);
 					if(space_count > stack.content[stack.top])
 					{
 						if(!stack_push(&stack, space_count))
@@ -239,7 +245,7 @@ int get_next_token(Token *token)
 						{
 							first_token = true;
 							for(size_t i = 0; i < space_count; i++)
-								ungetc(' ', stdin);
+								ungetc(' ', _stream);
 						}
 						else if(space_count > stack.content[stack.top])
 							return ERROR_LEXICAL;
@@ -259,7 +265,7 @@ int get_next_token(Token *token)
 					token->type = TypeEquality;
 				else
 				{
-					ungetc(c, stdin);
+					ungetc(c, _stream);
 					token->type = TypeAssignment;
 				}
 				break_while = true;
@@ -269,7 +275,7 @@ int get_next_token(Token *token)
 					token->type = TypeGreaterEq;
 				else
 				{
-					ungetc(c, stdin);
+					ungetc(c, _stream);
 					token->type = TypeGreater;
 				}
 				break_while = true;
@@ -277,9 +283,11 @@ int get_next_token(Token *token)
 			case STATE_LESSER:
 				if(c == '=')
 					token->type = TypeLesserEq;
+				else if(c == '>')
+					token->type = TypeUnEquality;
 				else
 				{
-					ungetc(c, stdin);
+					ungetc(c, _stream);
 					token->type = TypeLesser;
 				}
 				break_while = true;
@@ -289,7 +297,7 @@ int get_next_token(Token *token)
 					token->type = TypeUnEquality;
 				else
 				{
-					ungetc(c, stdin);
+					ungetc(c, _stream);
 					token->type = TypeNegation;
 				}
 				break_while = true;
@@ -343,45 +351,45 @@ int get_next_token(Token *token)
 				{
 					state = STATE_STRING_SPECIAL;
 				}
-				else if(c == '\n')
+				else if(c > 31)
 				{
-					return ERROR_LEXICAL;
+					if(!str_pushc(&str, c))
+						return ERROR_INTERNAL;
 				}
 				else
 				{
-					if(!str_add(&str, c))
-						return ERROR_INTERNAL;
+					return ERROR_LEXICAL;
 				}
 				break;
 			// '\' in string
 			case STATE_STRING_SPECIAL:
 				if(c == 'n')
 				{
-					if(!str_add(&str, '\n'))
+					if(!str_pushc(&str, '\n'))
 						return ERROR_INTERNAL;
 					state = STATE_STRING;
 				}
 				else if(c == 't')
 				{
-					if(!str_add(&str, '\t'))
+					if(!str_pushc(&str, '\t'))
 						return ERROR_INTERNAL;
 					state = STATE_STRING;
 				}
 				else if(c == '\\')
 				{
-					if(!str_add(&str, '\\'))
+					if(!str_pushc(&str, '\\'))
 						return ERROR_INTERNAL;
 					state = STATE_STRING;
 				}
 				else if(c == '\'')
 				{
-					if(!str_add(&str, '\''))
+					if(!str_pushc(&str, '\''))
 						return ERROR_INTERNAL;
 					state = STATE_STRING;
 				}
 				else if(c == '\"')
 				{
-					if(!str_add(&str, '\"'))
+					if(!str_pushc(&str, '\"'))
 						return ERROR_INTERNAL;
 					state = STATE_STRING;
 				}
@@ -391,9 +399,9 @@ int get_next_token(Token *token)
 				}
 				else
 				{
-					if(!str_add(&str, '\\'))
+					if(!str_pushc(&str, '\\'))
 						return ERROR_INTERNAL;
-					if(!str_add(&str, c))
+					if(!str_pushc(&str, c))
 						return ERROR_INTERNAL;
 					state = STATE_STRING;
 				}
@@ -401,7 +409,7 @@ int get_next_token(Token *token)
 			case STATE_STRING_HEX1:
 				if(isxdigit(c))
 				{
-					if(!str_add(&str, c))
+					if(!str_pushc(&str, c))
 						return ERROR_INTERNAL;
 					state = STATE_STRING_HEX2;
 				}
@@ -422,7 +430,7 @@ int get_next_token(Token *token)
 						str_free(&str);
 						return ERROR_LEXICAL;
 					}
-					if(!str_add(&str, tmp))
+					if(!str_pushc(&str, tmp))
 						return ERROR_INTERNAL;
 					state = STATE_STRING;
 				}
@@ -433,16 +441,16 @@ int get_next_token(Token *token)
 				}
 				break;
 			// Adds char to dynamic string while c is alphanumeric, if it is not anymore
-			// shoves the last char back into stdin and proceeds
+			// shoves the last char back into _stream and proceeds
 			case STATE_VARIABLE:
-				if(isalnum(c))
+				if(isalnum(c) || c == '_')
 				{
-					if(!str_add(&str, c))
+					if(!str_pushc(&str, c))
 						return ERROR_INTERNAL;
 				}
 				else
 				{
-					ungetc(c, stdin);
+					ungetc(c, _stream);
 
 					token->type = TypeVariable;
 					for(size_t i = 0; i < sizeof(keywords) / sizeof(keywords[0]); i++)
@@ -467,24 +475,24 @@ int get_next_token(Token *token)
 			case STATE_INT:
 				if(isdigit(c))
 				{
-					if(!str_add(&str, c))
+					if(!str_pushc(&str, c))
 						return ERROR_INTERNAL;
 				}
 				else if(c == '.')
 				{
-					if(!str_add(&str, c))
+					if(!str_pushc(&str, c))
 						return ERROR_INTERNAL;
 					state = STATE_FLOAT;
 				}
 				else if(c == 'e' || c == 'E')
 				{
-					if(!str_add(&str, c))
+					if(!str_pushc(&str, c))
 						return ERROR_INTERNAL;
 					state = STATE_FLOAT_E;
 				}
 				else
 				{
-					ungetc(c, stdin);
+					ungetc(c, _stream);
 					token->type = TypeInt;
 
 					if (!(token->data = malloc(sizeof(int))))
@@ -507,18 +515,18 @@ int get_next_token(Token *token)
 			case STATE_FLOAT:
 				if(isdigit(c))
 				{
-					if(!str_add(&str, c))
+					if(!str_pushc(&str, c))
 						return ERROR_INTERNAL;
 				}
 				else if(c == 'e' || c == 'E')
 				{
-					if(!str_add(&str, c))
+					if(!str_pushc(&str, c))
 						return ERROR_INTERNAL;
 					state = STATE_FLOAT_E;
 				}
 				else
 				{
-					ungetc(c, stdin);
+					ungetc(c, _stream);
 					token->type = TypeFloat;
 
 					if (!(token->data = malloc(sizeof(double))))
@@ -541,7 +549,7 @@ int get_next_token(Token *token)
 			case STATE_FLOAT_E:
 				if(isdigit(c) || c == '+' || c == '-')
 				{
-					if(!str_add(&str, c))
+					if(!str_pushc(&str, c))
 						return ERROR_INTERNAL;
 					state = STATE_FLOAT_EN;
 				}
@@ -554,12 +562,12 @@ int get_next_token(Token *token)
 			case STATE_FLOAT_EN:
 				if(isdigit(c))
 				{
-					if(!str_add(&str, c))
+					if(!str_pushc(&str, c))
 						return ERROR_INTERNAL;
 				}
 				else
 				{
-					ungetc(c, stdin);
+					ungetc(c, _stream);
 					token->type = TypeFloat;
 
 					if (!(token->data = malloc(sizeof(double))))
@@ -591,7 +599,7 @@ int get_next_token(Token *token)
 }
 
 #if defined(DEBUG) && DEBUG > 0
-const char *type_names[] = {"+", "-", "*", "/", "=", "==", ">", ">=", "<", "<=", "!", "!=", "(", ")", ":", ",", "tab", "new line", "keyword", "variable", "string", "int", "float", "indent", "dedent"};
+const char *type_names[] = {"+", "-", "*", "/", "=", "==", ">", ">=", "<", "<=", "!", "!=", "(", ")", ":", ",", /*"tab", */"new line", "keyword", "variable", "string", "int", "float", "indent", "dedent"};
 int scanner_main()
 {
 	Token token = {};

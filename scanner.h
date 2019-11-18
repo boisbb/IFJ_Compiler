@@ -1,6 +1,8 @@
 #ifndef SCANNER_H
 #define SCANNER_H
 
+#include <stdio.h>//fgetc, _stream, EOF, ungetc
+
 typedef enum
 {
 	TypeOperatorPlus,
@@ -19,7 +21,7 @@ typedef enum
 	TypeRightBracket,
 	TypeColon,
 	TypeComma,
-	TypeTab,
+	//TypeTab, //useless
 	TypeNewLine,
 	TypeKeyword,
 	TypeVariable,
@@ -48,6 +50,9 @@ int scanner_init();
 
 // function, that should be called at the end of using scanner
 void scanner_free();
+
+//set input stream, default stdin, can be called after scanner_init!
+void scanner_set_stream(FILE *stream);
 
 // reads one token from stdin a write it to parameter
 // returns 0 on success, EOF, ERROR_LEXICAL, ERROR_INTERNAL

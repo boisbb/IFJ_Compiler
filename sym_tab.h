@@ -1,23 +1,42 @@
+#include <stdio.h>
 #include <stdbool.h>
+#include <stdlib.h>
+#include <string.h>
 
+#include "strings.h"
 #include "scanner.h"
 
 #define HTAB_PRIME 24593
 
 // Symtable item data
-typedef struct symtab_it_data {
+typedef struct symIt_Var {
   int global; // 0 if its not global | 1 if its global
-    Type type;
-  int value_int;
-  char *value_str;
-  float value_float;
-  bool value_bool;
-} hSymtab_data;
+  Type type;
+
+} hSymtab_Var;
+
+typedef struct fct_param {
+  char param_type;
+  char *paramName;
+  struct fct_param *next;
+} hSymtab_Func_Param;
+
+typedef struct symIt_Func {
+  bool defined;
+  hSymtab_Func_Param *params;
+  Type return_type;
+} hSymtab_Func;
+
+typedef enum {
+  IT_VAR,
+  IT_FUNC
+} IT_Type;
 
 // Symtable item
 typedef struct symtab_it {
   char *hKey;            // based on key the item is placed in htab
-  hSymtab_data *data;
+  IT_Type item_type;
+  void *data;
   struct symtab_it *next;
 } hSymtab_it;
 

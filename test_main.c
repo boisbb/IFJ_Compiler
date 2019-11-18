@@ -6,7 +6,7 @@
 #include "parser.c"
 
 hSymtab *table;
-
+/*
 void print_sym_tab(hSymtab *table){
   DEBUG_PRINT("PRINTING WHOLE TABLE\n\n");
   for (int i = 0; i < HTAB_PRIME; i++){
@@ -20,11 +20,11 @@ void print_sym_tab(hSymtab *table){
     }
   }
 }
-
+*/
 
 int main() {
   prog();
-  print_sym_tab(table);
-  printf("\n");
-  DEBUG_PRINT("_____PARSING ENDED_____\n");
+  //print_sym_tab(table);
+  //printf("\n");
+  //DEBUG_PRINT("_____PARSING ENDED_____\n");
 }

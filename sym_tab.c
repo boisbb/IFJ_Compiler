@@ -1,9 +1,5 @@
 #include "sym_tab.h"
-#include "error.h"
 
-#include <stdlib.h>
-#include <string.h>
-#include <stdint.h> //uint32_t
 
 // HASHING FUNCTION //
 unsigned int symtab_hash_function(const char *str) {
@@ -36,7 +32,7 @@ hSymtab_it *symtab_it_position(char *searched_for, hSymtab *sym_tab){
 }
 
 int symtab_it_get_type(hSymtab_it *symtab_it){
-  if (symtab_it->data->type == TypeInt) {
+  /*if (symtab_it->data->type == TypeInt) {
     return TypeInt;
   }
   else if (symtab_it->data->type == TypeFloat) {
@@ -44,7 +40,7 @@ int symtab_it_get_type(hSymtab_it *symtab_it){
   }
   else if (symtab_it->data->type == TypeString) {
     return TypeString;
-  }
+  }*/
   return 0;
 }
 
@@ -59,7 +55,6 @@ void symtab_add_it(hSymtab *sym_tab, Token *token){
     }
     (*sym_tab)[hash]->next = NULL;
     strcpy((*sym_tab)[hash]->hKey, (char *)token->data);
-    (*sym_tab)[hash]->data = NULL;
   }
   else {
     hSymtab_it *tmp = (*sym_tab)[hash];
@@ -71,55 +66,29 @@ void symtab_add_it(hSymtab *sym_tab, Token *token){
     }
     tmp->next = NULL;
     strcpy(tmp->hKey, (char*)token->data);
-    tmp->data = NULL;
+  }
+
+  switch(token->type) {
+
+    case TypeVariable:
+      (*sym_tab)[hash]->data = malloc(sizeof(hSymtab_Var));
+      ((hSymtab_Var*)((*sym_tab)[hash]->data))->global = -1;
+      ((hSymtab_Var*)((*sym_tab)[hash]->data))->type = TypeUnspecified;
+      break;
+
+
+    case TypeFunc:
+      (*sym_tab)[hash]->data = malloc(sizeof(hSymtab_Func));
+      ((hSymtab_Func*)((*sym_tab)[hash]->data))->defined = false;
+      ((hSymtab_Func*)((*sym_tab)[hash]->data))->params = NULL;
+      ((hSymtab_Func*)((*sym_tab)[hash]->data))->return_type = TypeUnspecified;
+      break;
+
+    default:
+      break;
   }
 }
 
 void symtab_add_value(hSymtab *sym_tab, hSymtab_it *symtab_it,Token *token_val){
-
-  if (symtab_it == NULL) {
-    DEBUG_PRINT("SYNTAX ERROR: The variable couldn't be found\n");
-    exit(1);
-  }
-
-  if ((symtab_it->data = malloc(sizeof(hSymtab_data))) == NULL) {
-    DEBUG_PRINT("Memory allocation for sym_tab_it->data failed.");
-    exit(1);
-  }
-
-
-  if (token_val->type == TypeInt) {
-    symtab_it->data->type = TypeInt;
-    symtab_it->data->value_int = *(int*)token_val->data;
-    // SOMEHOW solve global variables TODO
-  }
-  else if (token_val->type == TypeVariable) {
-    hSymtab_it *tmp_val = NULL;
-    if ((tmp_val = symtab_it_position((char*)token_val->data, sym_tab)) == NULL) {
-      DEBUG_PRINT("SYNTAX ERROR: The variable: %s couldn't be found\n", (char*)token_val->data);
-      exit(1);
-    }
-
-    symtab_it->data->type = tmp_val->data->type;
-    if (tmp_val->data->type == TypeInt) {
-      symtab_it->data->value_int = tmp_val->data->value_int;
-    }
-    else if (tmp_val->data->type == TypeString) {
-      symtab_it->data->value_str = malloc(sizeof(char) * strlen(tmp_val->data->value_str));
-      strcpy(symtab_it->data->value_str, tmp_val->data->value_str);
-      // SOMEHOW solve global variables TODO
-    }
-    else if (tmp_val->data->type == TypeFloat) {
-      symtab_it->data->value_float = tmp_val->data->value_float;
-      // SOMEHOW solve global variables TODO
-    }
-  }
-  else if(token_val->type == TypeString) {
-    symtab_it->data->type = TypeString;
-    if ((symtab_it->data->value_str = malloc(sizeof(char) * strlen((char*)token_val->data))) == NULL) {
-      DEBUG_PRINT("Memory allocation for sym_tab_it->data failed.");
-      exit(1);
-    }
-    strcpy(symtab_it->data->value_str, (char*)token_val->data);
-  }
+  // TODO
 }

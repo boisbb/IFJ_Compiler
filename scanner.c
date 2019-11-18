@@ -1,51 +1,13 @@
 #include "scanner.h"
 
-#include <stdio.h>//fgetc, stdin, EOF, ungetc
-#include <stdlib.h>//malloc, strtol, strtod
-#include <stdbool.h>
-#include <ctype.h>//isalpha, isalnum, isdigit, isxdigit
-#include <string.h>//strcpy, strcmp
-#include <limits.h>//INT_MAX
-
-#include "error.h"
-#include "strings.h"
-#include "stack.h"
-
-
 /////// CONSTANTS ////
 const char *keywords[] = {"def", "else", "if", "None", "pass", "return", "while"};
+
+
+/// JUST FOR TESTING //
+const char *opNames[] = {"+", "-", "*", "/", "=", "==", ">", ">=", "<", "<=", "!", "!=", "(", ")", ":", ",", "tab", "new line", "keyword", "variable", "string", "int", "float", "indent", "dedent"};
 //////////////////////
 
-
-/////// STATES ///////
-#define STATE_INITIAL 259
-
-#define STATE_EQUALS 260
-#define STATE_GREATER 261
-#define STATE_LESSER 262
-#define STATE_NEGATION 263
-
-#define STATE_INDENTATION 267
-
-#define STATE_VARIABLE 268
-
-#define STATE_STRING 269
-#define STATE_STRING_SPECIAL 270
-#define STATE_STRING_HEX1 271
-#define STATE_STRING_HEX2 272
-
-#define STATE_LINE_COMMENT 275
-#define STATE_BLOCK_COMMENT_IN1 276
-#define STATE_BLOCK_COMMENT_IN2 277
-#define STATE_BLOCK_COMMENT 278
-#define STATE_BLOCK_COMMENT_OUT1 279
-#define STATE_BLOCK_COMMENT_OUT2 280
-
-#define STATE_INT 283
-#define STATE_FLOAT 284
-#define STATE_FLOAT_E 285
-#define STATE_FLOAT_EN 286
-/////////////////////
 
 ///// GLOBALS /////
 bool first_token = true;
@@ -63,6 +25,9 @@ void scanner_free()
 	stack_free(&stack);
 }
 
+// In actuality, there will be another condition, that the cycle will continue only if parser asks for token,
+// the function will cycle, but won't do anything
+// In the future, this will be function named get_next_token
 int get_next_token(Token *token)
 {
 	if(!stack.content || stack_empty(&stack))
@@ -207,7 +172,7 @@ int get_next_token(Token *token)
 				}
 				else
 				{
-					DEBUG_PRINT("%s: 0x%.2X, %i, \'%c\'\n", "unknown symbol", c, c, c);
+					fprintf(stderr, "%s: 0x%.2X, %i\n", "unknown symbol", c, c);
 					return ERROR_LEXICAL;
 				}
 				break;
@@ -590,8 +555,7 @@ int get_next_token(Token *token)
 		return 0;
 }
 
-#if defined(DEBUG) && DEBUG > 0
-const char *type_names[] = {"+", "-", "*", "/", "=", "==", ">", ">=", "<", "<=", "!", "!=", "(", ")", ":", ",", "tab", "new line", "keyword", "variable", "string", "int", "float", "indent", "dedent"};
+
 int scanner_main()
 {
 	Token token = {};
@@ -602,13 +566,13 @@ int scanner_main()
 	while((err_num = get_next_token(&token)) == 0)
 	{
 		if(token.type == TypeString || token.type == TypeVariable || token.type == TypeKeyword)
-			printf("Token type: %s | Token data: %s \n", type_names[token.type], (char*)token.data);
+			printf("AToken type: %s | Token data: %s \n", opNames[token.type], (char*)token.data);
 		else if(token.type == TypeInt)
-			printf("Token type: %s | Token data: %i \n", type_names[token.type], *(int*)token.data);
+			printf("Token type: %s | Token data: %i \n", opNames[token.type], *(int*)token.data);
 		else if(token.type == TypeFloat)
-			printf("Token type: %s | Token data: %f \n", type_names[token.type], *(double*)token.data);
+			printf("Token type: %s | Token data: %f \n", opNames[token.type], *(double*)token.data);
 		else
-			printf("Token type: %s \n", type_names[token.type]);
+			printf("Token type: %s \n", opNames[token.type]);
 		free(token.data);
 		token.data = NULL;
 	}
@@ -619,10 +583,10 @@ int scanner_main()
 	switch (err_num)
 	{
 		case ERROR_LEXICAL:
-			DEBUG_PRINT("%s\n", "ERROR_LEXICAL");
+			fprintf(stderr, "%s\n", "ERROR_LEXICAL");
 			break;
 		case ERROR_INTERNAL:
-			DEBUG_PRINT("%s\n", "ERROR_INTERNAL");
+			fprintf(stderr, "%s\n", "ERROR_INTERNAL");
 			break;
 		case EOF:
 			printf("EOF\n");
@@ -631,4 +595,3 @@ int scanner_main()
 	}
 	return err_num;
 }
-#endif

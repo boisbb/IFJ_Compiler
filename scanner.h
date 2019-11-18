@@ -1,11 +1,7 @@
-#include <stdio.h>
-#include <stdlib.h>//malloc, strtol, strtod
-#include <stdbool.h>
-#include <ctype.h>//isalpha, isalnum, isdigit, isxdigit
-#include <string.h>//strcpy, strcmp
-#include <limits.h>//INT_MAX
+#ifndef SCANNER_H
+#define SCANNER_H
 
-#include <stdio.h>//fgetc, _stream, EOF, ungetc
+#include <stdio.h>
 
 typedef enum
 {
@@ -39,8 +35,6 @@ typedef enum
 } Type;
 /////////////////////
 
-
-
 // TOKEN STRUCTURE ///
 typedef struct
 {
@@ -49,11 +43,20 @@ typedef struct
 } Token;
 ////////////////////
 
+/// JUST FOR TESTING ///
+#if defined(DEBUG) && DEBUG > 0
+ int scanner_main();
+#endif
+///////////////////////
 
-
+// function, that should be called before using function scanner
+// returns 0 on error and 1 on success
 int scanner_init();
 
-//set input stream, default stdin, can be called after scanner_init!
+// function, that should be called at the end of using scanner
+void scanner_free();
+
+// set input stream, default stdin, can be called after scanner_init!
 void scanner_set_stream(FILE *stream);
 
 // reads one token from stdin a write it to parameter
@@ -61,4 +64,4 @@ void scanner_set_stream(FILE *stream);
 // call scanner_init before and scanner_free after using!!
 int get_next_token(Token *token);
 
-int scanner_main();
+#endif

@@ -14,11 +14,35 @@
 /////// CONSTANTS ////
 const char *keywords[] = {"def", "else", "if", "None", "pass", "return", "while"};
 
+/////// STATES ///////
+#define STATE_INITIAL 259
 
-/// JUST FOR TESTING //
-const char *opNames[] = {"+", "-", "*", "/", "=", "==", ">", ">=", "<", "<=", "!", "!=", "(", ")", ":", ",", "tab", "new line", "keyword", "variable", "string", "int", "float", "indent", "dedent"};
-//////////////////////
+#define STATE_EQUALS 260
+#define STATE_GREATER 261
+#define STATE_LESSER 262
+#define STATE_NEGATION 263
 
+#define STATE_INDENTATION 267
+
+#define STATE_VARIABLE 268
+
+#define STATE_STRING 269
+#define STATE_STRING_SPECIAL 270
+#define STATE_STRING_HEX1 271
+#define STATE_STRING_HEX2 272
+
+#define STATE_LINE_COMMENT 275
+#define STATE_BLOCK_COMMENT_IN1 276
+#define STATE_BLOCK_COMMENT_IN2 277
+#define STATE_BLOCK_COMMENT 278
+#define STATE_BLOCK_COMMENT_OUT1 279
+#define STATE_BLOCK_COMMENT_OUT2 280
+
+#define STATE_INT 283
+#define STATE_FLOAT 284
+#define STATE_FLOAT_E 285
+#define STATE_FLOAT_EN 286
+/////////////////////
 
 ///// GLOBALS /////
 FILE *_stream;
@@ -584,13 +608,13 @@ int scanner_main()
 	while((err_num = get_next_token(&token)) == 0)
 	{
 		if(token.type == TypeString || token.type == TypeVariable || token.type == TypeKeyword)
-			printf("AToken type: %s | Token data: %s \n", opNames[token.type], (char*)token.data);
+			printf("AToken type: %s | Token data: %s \n", type_names[token.type], (char*)token.data);
 		else if(token.type == TypeInt)
-			printf("Token type: %s | Token data: %i \n", opNames[token.type], *(int*)token.data);
+			printf("Token type: %s | Token data: %i \n", type_names[token.type], *(int*)token.data);
 		else if(token.type == TypeFloat)
-			printf("Token type: %s | Token data: %f \n", opNames[token.type], *(double*)token.data);
+			printf("Token type: %s | Token data: %f \n", type_names[token.type], *(double*)token.data);
 		else
-			printf("Token type: %s \n", opNames[token.type]);
+			printf("Token type: %s \n", type_names[token.type]);
 		free(token.data);
 		token.data = NULL;
 	}
@@ -613,3 +637,4 @@ int scanner_main()
 	}
 	return err_num;
 }
+#endif

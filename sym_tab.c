@@ -72,6 +72,7 @@ void symtab_add_it(hSymtab *sym_tab, Token *token){
 
     case TypeVariable:
       (*sym_tab)[hash]->data = malloc(sizeof(hSymtab_Var));
+      (*sym_tab)[hash]->item_type = IT_VAR;
       ((hSymtab_Var*)((*sym_tab)[hash]->data))->global = -1;
       ((hSymtab_Var*)((*sym_tab)[hash]->data))->type = TypeUnspecified;
       break;
@@ -79,6 +80,7 @@ void symtab_add_it(hSymtab *sym_tab, Token *token){
 
     case TypeFunc:
       (*sym_tab)[hash]->data = malloc(sizeof(hSymtab_Func));
+      (*sym_tab)[hash]->item_type = IT_FUNC;
       ((hSymtab_Func*)((*sym_tab)[hash]->data))->defined = false;
       ((hSymtab_Func*)((*sym_tab)[hash]->data))->params = NULL;
       ((hSymtab_Func*)((*sym_tab)[hash]->data))->return_type = TypeUnspecified;

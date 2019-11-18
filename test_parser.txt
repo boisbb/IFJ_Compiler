@@ -1,1 +1,1 @@
-aha = substr('auto', 1, 2)
+aha = len('auto')

@@ -143,30 +143,34 @@ int fction_params(Token *token, hSymtab_it *symtab_it){
   while(!TOKEN_TYPE_NEEDED_CHECK(token->type, TypeRightBracket)){
     if(TOKEN_TYPE_NEEDED_CHECK(token->type, TypeVariable)){
 
-      printf("var\n");
+      //printf("var\n");
       check_comma = 0;
-      DEBUG_PRINT("hKey: %s", symtab_it->hKey);
+      //DEBUG_PRINT("hKey: %s", symtab_it->hKey);
       if (malloc_check == false) {
         ((hSymtab_Func *)(symtab_it->data))->params = malloc(sizeof(hSymtab_Func_Param));
         params = ((hSymtab_Func *)(symtab_it->data))->params;
         ((hSymtab_Func *)(symtab_it->data))->params->param_type = TypeUnspecified;
+
+        ((hSymtab_Func *)(symtab_it->data))->params->paramName = malloc(sizeof(char)*strlen((char*)token->data));
+        strcpy(params->paramName, (char*)token->data);
+
         malloc_check = true;
       }
       else {
         params->next = malloc(sizeof(hSymtab_Func_Param));
         ((hSymtab_Func *)(symtab_it->data))->params->param_type = TypeUnspecified;
 
+        params->next->paramName = malloc(sizeof(char)*strlen((char*)token->data));
+        strcpy(params->next->paramName, (char*)token->data);
+
+
+
         params = params->next;
       }
 
-      //zapsat parametry do tabulky bez typu
-      /*
-      hSymtab_Func_Param *func_param;
-      *func_param = (hSymtab_Func_Param) malloc(sizeof(fct_param));
-      */
     }
     else if(TOKEN_TYPE_NEEDED_CHECK(token->type, TypeComma)){
-      printf("comma\n");
+      //printf("comma\n");
       check_comma = 1;
     }
     else{

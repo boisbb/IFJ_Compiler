@@ -61,7 +61,6 @@ extern char current_line[1000];
 int err = 0;
 extern hSymtab *table = NULL;
 
-
 void assignment(Token *var, Token *value){
   if (GET_TOKEN_CHECK_EOF(value) || TOKEN_TYPE_NEEDED_CHECK(value->type, TypeNewLine)) {DEBUG_PRINT("Reached EOF or Newline where it shouldn't be\n"); exit(1);}
 
@@ -135,14 +134,30 @@ void body(Token *token){
   }
 }
 
-int fction_params(Token *token){
+int fction_params(Token *token, hSymtab_it *symtab_it){
   //need new token, now token is left bracket
   if (GET_TOKEN_CHECK_EOF(token) || TOKEN_TYPE_NEEDED_CHECK(token->type, TypeNewLine)) {DEBUG_PRINT("Reached EOF or Newline where it shouldn't be\n"); exit(1);}
   int check_comma = 0; //params should not end with comma
+  bool malloc_check = false;
+  hSymtab_Func_Param *params = NULL;
   while(!TOKEN_TYPE_NEEDED_CHECK(token->type, TypeRightBracket)){
     if(TOKEN_TYPE_NEEDED_CHECK(token->type, TypeVariable)){
-        printf("var\n");
-        check_comma = 0;
+
+      printf("var\n");
+      check_comma = 0;
+      DEBUG_PRINT("hKey: %s", symtab_it->hKey);
+      if (malloc_check == false) {
+        ((hSymtab_Func *)(symtab_it->data))->params = malloc(sizeof(hSymtab_Func_Param));
+        params = ((hSymtab_Func *)(symtab_it->data))->params;
+        ((hSymtab_Func *)(symtab_it->data))->params->param_type = TypeUnspecified;
+        malloc_check = true;
+      }
+      else {
+        params->next = malloc(sizeof(hSymtab_Func_Param));
+        ((hSymtab_Func *)(symtab_it->data))->params->param_type = TypeUnspecified;
+
+        params = params->next;
+      }
 
       //zapsat parametry do tabulky bez typu
       /*
@@ -184,7 +199,7 @@ int fction_start(Token *token){
         //printf("dobrý\n");
         fction_name->type = TypeFunc;
         symtab_add_it(table, fction_name); //add name of fction to table
-        if(fction_params(token) != 0){ //pořešit návratové hodnoty
+        if(fction_params(token, symtab_it_position((char *)fction_name->data, table)) != 0){ //pořešit návratové hodnoty
           return 1;
         }
         if (GET_TOKEN_CHECK_EOF(token)) {DEBUG_PRINT("Reached EOF where it shouldn't be\n"); exit(1);}

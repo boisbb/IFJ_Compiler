@@ -114,42 +114,54 @@ void body(Token *token){
 }
 
 int fction_params(Token *token){
-  //potřebuju nový token, teď mám načtenou levou závorku
+  //need new token, now token is left bracket
   if (GET_TOKEN_CHECK_EOF(token) || TOKEN_TYPE_NEEDED_CHECK(token->type, TypeNewLine)) {DEBUG_PRINT("Reached EOF or Newline where it shouldn't be\n"); exit(1);}
+  int check_comma = 0; //params should not end with comma
   while(!TOKEN_TYPE_NEEDED_CHECK(token->type, TypeRightBracket)){
     if(TOKEN_TYPE_NEEDED_CHECK(token->type, TypeVariable)){
-      printf("var\n");
+        printf("var\n");
+        check_comma = 0;
       //zapsat parametry do tabulky bez typu
-
+      /*
+      hSymtab_Func_Param *func_param;
+      *func_param = (hSymtab_Func_Param) malloc(sizeof(fct_param));
+      */
     }
     else if(TOKEN_TYPE_NEEDED_CHECK(token->type, TypeComma)){
       printf("comma\n");
+      check_comma = 1;
     }
     else{
       return 1;
     }
     if (GET_TOKEN_CHECK_EOF(token) || TOKEN_TYPE_NEEDED_CHECK(token->type, TypeNewLine)) {DEBUG_PRINT("Reached EOF or Newline where it shouldn't be\n"); exit(1);}
   }
-  return 0;
+  if (check_comma == 1){
+    printf("chyba\n");
+    return 1;
+  }
+  else{
+    return 0;
+  }
 }
 
 int fction_start(Token *token){
-  //return 1 = chyba
+  //return 1 = error
   if (GET_TOKEN_CHECK_EOF(token) || TOKEN_TYPE_NEEDED_CHECK(token->type, TypeNewLine)) {DEBUG_PRINT("Reached EOF or Newline where it shouldn't be\n"); exit(1);}
 
-  //zacatek funkce
+  //beginning of function
   if(TOKEN_TYPE_NEEDED_CHECK(token->type, TypeVariable)){
     Token *fction_name = token;
 
-    //kontrola, jeslti následuje závorka a jestli není EOF
+    //check if next token is left bracket and not EOF
     if (GET_TOKEN_CHECK_EOF(token)) {DEBUG_PRINT("Reached EOF where it shouldn't be\n"); exit(1);}
     if(TOKEN_TYPE_NEEDED_CHECK(token->type, TypeLeftBracket)){
-      //kontrola jeslti funcke s tímto jménem není už v tabulce
+      //check if function with same name already exists
       if(symtab_it_position((char*)token->data, table) == NULL){
         //printf("dobrý\n");
         fction_name->type = TypeFunc;
-        symtab_add_it(table, fction_name); //přidám do tabulky název funcke
-        if(fction_params(token) != 0){
+        symtab_add_it(table, fction_name); //add name of fction to table
+        if(fction_params(token) != 0){ //pořešit návratové hodnoty
           return 1;
         }
         if (GET_TOKEN_CHECK_EOF(token)) {DEBUG_PRINT("Reached EOF where it shouldn't be\n"); exit(1);}
@@ -160,7 +172,7 @@ int fction_start(Token *token){
 
       }
       else{
-        return 1; //funcke už v tabulce je
+        return 1; //function already exists
       }
     }
   }

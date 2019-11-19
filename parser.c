@@ -1,22 +1,4 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdbool.h>
-
-#include "sym_tab.h"
-#include "error.h"
-
-extern char current_line[1000];
-
-#define WANTED_TYPE 1
-#define UNWANTED_TYPE 0
-#define IF_STAT 26
-#define WHILE_STAT 27
-//#define FCTDEF 28 -> není potřeba, (keyword def)
-
-// FUNCTIONS //
-#define LEN 30
-#define SUBSTR 31
-#define USERDEF 35
+#include "parser.h"
 
 #define GET_TOKEN_CHECK_EOF(token) \
             (get_next_token(token) == EOF) ? 1 : 0 \
@@ -188,16 +170,19 @@ int fction_params(Token *token, hSymtab_it *symtab_it){
     if(TOKEN_TYPE_NEEDED_CHECK(token->type, TypeVariable)){
 
       check_comma = 0;
-      //DEBUG_PRINT("hKey: %s", symtab_it->hKey);
       if (malloc_check == false) {
 
-        ((hSymtab_Func *)(symtab_it->data))->params = malloc(sizeof(hSymtab_Func_Param));
+        if( !(((hSymtab_Func *)(symtab_it->data))->params = malloc(sizeof(hSymtab_Func_Param))) ){
+          return 99;
+        }
         //add malloc chcek
 
         params = ((hSymtab_Func *)(symtab_it->data))->params;
         ((hSymtab_Func *)(symtab_it->data))->params->param_type = TypeUnspecified;
 
-        ((hSymtab_Func *)(symtab_it->data))->params->paramName = malloc(sizeof(char)*strlen((char*)token->data));
+        if( !(((hSymtab_Func *)(symtab_it->data))->params->paramName = malloc(sizeof(char)*strlen((char*)token->data))) ){
+          return 99;
+        }
         strcpy(params->paramName, (char*)token->data);
         //no need to check name, it is first param
 
@@ -207,14 +192,26 @@ int fction_params(Token *token, hSymtab_it *symtab_it){
       else {
         //for name check
         hSymtab_Func_Param *names = NULL;
-        names = params = ((hSymtab_Func *)(symtab_it->data))->params;
+        names = ((hSymtab_Func *)(symtab_it->data))->params;
 
-        params->next = malloc(sizeof(hSymtab_Func_Param));
+        while(names != NULL){
+          //error two parameters with same name
+          if(strcmp(names->paramName, (char*)token->data) == 0){
+            return 1;
+          }
+          names = names->next;
+        }
+
+        if( !(params->next = malloc(sizeof(hSymtab_Func_Param))) ){
+          return 99;
+        }
         ((hSymtab_Func *)(symtab_it->data))->params->param_type = TypeUnspecified;
 
-        params->next->paramName = malloc(sizeof(char)*strlen((char*)token->data));
+        if( !(params->next->paramName = malloc(sizeof(char)*strlen((char*)token->data))) ){
+          return 99;
+        }
         strcpy(params->next->paramName, (char*)token->data);
-        //printf("%s\n", params->paramName);
+
         params = params->next;
       }
 
@@ -225,7 +222,7 @@ int fction_params(Token *token, hSymtab_it *symtab_it){
       */
     }
     else if(TOKEN_TYPE_NEEDED_CHECK(token->type, TypeComma)){
-      printf("comma\n");
+      //printf("comma\n");
       check_comma = 1;
     }
     else{
@@ -234,7 +231,6 @@ int fction_params(Token *token, hSymtab_it *symtab_it){
     if (GET_TOKEN_CHECK_EOF(token) || TOKEN_TYPE_NEEDED_CHECK(token->type, TypeNewLine)) {DEBUG_PRINT("Reached EOF or Newline where it shouldn't be\n"); exit(1);}
   }
   if (check_comma == 1){
-    printf("\nCHYBA\n\n\n");
     //add free
     return 1;
   }
@@ -253,26 +249,51 @@ int fction_start(Token *token){
 
     //check if next token is left bracket and not EOF
     if (GET_TOKEN_CHECK_EOF(token)) {DEBUG_PRINT("Reached EOF where it shouldn't be\n"); exit(1);}
+
     if(TOKEN_TYPE_NEEDED_CHECK(token->type, TypeLeftBracket)){
       //check if function with same name already exists
       if(symtab_it_position((char*)token->data, table) == NULL){
-        //printf("dobrý\n");
+
         fction_name->type = TypeFunc;
         symtab_add_it(table, fction_name); //add name of fction to table
-        if(fction_params(token, symtab_it_position((char *)fction_name->data, table)) != 0){ //pořešit návratové hodnoty
+
+        int fction_return = fction_params(token, symtab_it_position((char *)fction_name->data, table));
+        /*if( ( fction_params(token, symtab_it_position((char *)fction_name->data, table)) != 0){
+          return 1;
+        }*/
+        if(fction_return == 1){
+          printf("\n!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! nastala chyba !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n\n\n");
           return 1;
         }
-        if (GET_TOKEN_CHECK_EOF(token)) {DEBUG_PRINT("Reached EOF where it shouldn't be\n"); exit(1);}
-        if(TOKEN_TYPE_NEEDED_CHECK(token->type, TypeColon)){
-          printf("\nSPRÁVNĚ\n\n\n");
+        else if(fction_return == 99){
+          printf("\n!!!!!!!!!!!!!!!!!!!!! malloc chyba !!!!!!!!!!!!!!!!!!!\n\n\n");
+          return 99;
         }
-        //fction_body();
 
+
+        if (GET_TOKEN_CHECK_EOF(token)) {DEBUG_PRINT("Reached EOF where it shouldn't be\n"); exit(1);}
+
+        //is there ":"" and EOF after ")"?
+        if(TOKEN_TYPE_NEEDED_CHECK(token->type, TypeColon)){
+          if(GET_TOKEN_CHECK_EOF(token) || TOKEN_TYPE_NEEDED_CHECK(token->type, TypeNewLine)){
+            printf("\nSPRÁVNĚ\n\n\n");
+
+            //generate???
+            return 0;
+          }
+          printf("\n!!!!!!!!!!!!!!!!!!!!!!!!!! CHYBA UKONČENÍ HLAVIČKY !!!!!!!!!!!!!!!!!!!!!!!!!!!!\n\n\n");
+          return 1;
+        }
+        //fction_body();?? asi jo
       }
       else{
         return 1; //function already exists
       }
     }
+    return 1;
+  }
+  else{
+    return 1; //token is not variable
   }
 }
 
@@ -295,9 +316,12 @@ int prog() {
 
 
 
-
+//zajistit volání
   if (strcmp((char*)token->data, "def") == 0) {
-    fction_start(token); //kontrolovat, co to vrátilo, kvůli returnům
+    fction_start(token);
+    //kontrolovat, co to vrátilo, kvůli returnům
+    //volat znovu prog, a nebo další definici funkce udělat v body?
+    //spíš v body
     return 0;
   }
   else {

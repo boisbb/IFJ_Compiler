@@ -5,6 +5,7 @@
 
 #include "strings.h"
 #include "scanner.h"
+#include "error.h"
 
 #define HTAB_PRIME 24593
 
@@ -16,7 +17,7 @@ typedef struct symIt_Var {
 } hSymtab_Var;
 
 typedef struct fct_param {
-  char param_type;
+  Type param_type;
   char *paramName;
   struct fct_param *next;
 } hSymtab_Func_Param;
@@ -52,4 +53,6 @@ hSymtab_it *symtab_it_position(char *searched_for, hSymtab *sym_tab);
 
 void symtab_add_it(hSymtab *sym_tab, Token *token);
 
-void symtab_add_value(hSymtab *sym_tab, hSymtab_it *symtab_it,Token *token_val);
+void symtab_add_var_data(hSymtab_it *symtab_it, Type type);
+
+void symtab_add_predef_func(hSymtab *table);

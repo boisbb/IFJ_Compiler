@@ -61,7 +61,6 @@ extern char current_line[1000];
 int err = 0;
 extern hSymtab *table = NULL;
 
-int foo(){}
 
 void assignment(Token *var, Token *value){
   if (GET_TOKEN_CHECK_EOF(value) || TOKEN_TYPE_NEEDED_CHECK(value->type, TypeNewLine)) {DEBUG_PRINT("Reached EOF or Newline where it shouldn't be\n"); exit(1);}
@@ -144,6 +143,7 @@ int fction_params(Token *token){
     if(TOKEN_TYPE_NEEDED_CHECK(token->type, TypeVariable)){
         printf("var\n");
         check_comma = 0;
+
       //zapsat parametry do tabulky bez typu
       /*
       hSymtab_Func_Param *func_param;

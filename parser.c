@@ -138,33 +138,43 @@ int fction_params(Token *token, hSymtab_it *symtab_it){
   //need new token, now token is left bracket
   if (GET_TOKEN_CHECK_EOF(token) || TOKEN_TYPE_NEEDED_CHECK(token->type, TypeNewLine)) {DEBUG_PRINT("Reached EOF or Newline where it shouldn't be\n"); exit(1);}
   int check_comma = 0; //params should not end with comma
-  bool malloc_check = false;
+  bool malloc_check = false; //we want malloc only fist time
   hSymtab_Func_Param *params = NULL;
+
   while(!TOKEN_TYPE_NEEDED_CHECK(token->type, TypeRightBracket)){
+
+    //může být parametr další funkce?????
+
     if(TOKEN_TYPE_NEEDED_CHECK(token->type, TypeVariable)){
 
-      //printf("var\n");
       check_comma = 0;
       //DEBUG_PRINT("hKey: %s", symtab_it->hKey);
       if (malloc_check == false) {
+
         ((hSymtab_Func *)(symtab_it->data))->params = malloc(sizeof(hSymtab_Func_Param));
+        //add malloc chcek
+
         params = ((hSymtab_Func *)(symtab_it->data))->params;
         ((hSymtab_Func *)(symtab_it->data))->params->param_type = TypeUnspecified;
 
         ((hSymtab_Func *)(symtab_it->data))->params->paramName = malloc(sizeof(char)*strlen((char*)token->data));
         strcpy(params->paramName, (char*)token->data);
+        //no need to check name, it is first param
 
         malloc_check = true;
       }
+      //after malloc
       else {
+        //for name check
+        hSymtab_Func_Param *names = NULL;
+        names = params = ((hSymtab_Func *)(symtab_it->data))->params;
+
         params->next = malloc(sizeof(hSymtab_Func_Param));
         ((hSymtab_Func *)(symtab_it->data))->params->param_type = TypeUnspecified;
 
         params->next->paramName = malloc(sizeof(char)*strlen((char*)token->data));
         strcpy(params->next->paramName, (char*)token->data);
-
-
-
+        //printf("%s\n", params->paramName);
         params = params->next;
       }
 
@@ -179,7 +189,8 @@ int fction_params(Token *token, hSymtab_it *symtab_it){
     if (GET_TOKEN_CHECK_EOF(token) || TOKEN_TYPE_NEEDED_CHECK(token->type, TypeNewLine)) {DEBUG_PRINT("Reached EOF or Newline where it shouldn't be\n"); exit(1);}
   }
   if (check_comma == 1){
-    printf("chyba\n");
+    printf("\nCHYBA\n\n\n");
+    //add free
     return 1;
   }
   else{
@@ -208,7 +219,7 @@ int fction_start(Token *token){
         }
         if (GET_TOKEN_CHECK_EOF(token)) {DEBUG_PRINT("Reached EOF where it shouldn't be\n"); exit(1);}
         if(TOKEN_TYPE_NEEDED_CHECK(token->type, TypeColon)){
-          printf("spravně\n");
+          printf("\nSPRÁVNĚ\n\n\n");
         }
         //fction_body();
 

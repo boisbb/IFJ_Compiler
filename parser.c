@@ -61,22 +61,42 @@ extern char current_line[1000];
 int err = 0;
 extern hSymtab *table = NULL;
 
-void assignment(Token *token, Token *token_next){
-  if (GET_TOKEN_CHECK_EOF(token) || TOKEN_TYPE_NEEDED_CHECK(token->type, TypeNewLine)) {DEBUG_PRINT("Reached EOF or Newline where it shouldn't be\n"); exit(1);}
+void assignment(Token *var, Token *value){
+  if (GET_TOKEN_CHECK_EOF(value) || TOKEN_TYPE_NEEDED_CHECK(value->type, TypeNewLine)) {DEBUG_PRINT("Reached EOF or Newline where it shouldn't be\n"); exit(1);}
 
+  // TODO if the variable has already been added to symtab
 
-  if (TOKEN_TYPE_NEEDED_CHECK(token->type, TypeInt)
-      || TOKEN_TYPE_NEEDED_CHECK(token->type, TypeString)
-      || TOKEN_TYPE_NEEDED_CHECK(token->type, TypeFloat)
-      || TOKEN_TYPE_NEEDED_CHECK(token->type, TypeVariable)) {
+  hSymtab_it *tmp_it;
+  switch(value->type){
+    // Add variable as Integer
+    case TypeInt:
+      symtab_add_it(table, var);
+      symtab_add_var_data((*table)[symtab_hash_function((char*)var->data)], TypeInt);
+      break;
+    // Add variable as String
+    case TypeString:
+      symtab_add_it(table, var);
+      symtab_add_var_data((*table)[symtab_hash_function((char*)var->data)], TypeString);
+      break;
+    // Add variable as Float
+    case TypeFloat:
+      symtab_add_it(table, var);
+      symtab_add_var_data((*table)[symtab_hash_function((char*)var->data)], TypeFloat);
+      break;
+    // Add variable as same type as Variable
+    case TypeVariable:
+      if (!(tmp_it = symtab_it_position((char*)value->data, table))) {
+        DEBUG_PRINT("SYNTAX ERROR: The variable %s is non-existent.\n", (char*)value->data);
+        exit(1);
+      }
+      symtab_add_it(table, var);
+      symtab_add_var_data((*table)[symtab_hash_function((char*)var->data)], ((hSymtab_Var*)(tmp_it->data))->type);
+      break;
 
-        // TADY SE BUDE TVORIT INSTRUKCE
+    default:
+      break;
 
-        return;
   }
-
-
-
 }
 
 
@@ -99,6 +119,7 @@ bool command(Token *token){
 
 void body(Token *token){
   command(token);
+  if (GET_TOKEN_CHECK_EOF(token)) {DEBUG_PRINT("Found EOF, parsing terminated.\n"); return;}
   while (1) {
       if (TOKEN_TYPE_NEEDED_CHECK(token->type, TypeNewLine)) {
 
@@ -181,6 +202,7 @@ int prog() {
 
   table = malloc(sizeof(hSymtab));
   symtab_init(table);
+  symtab_add_predef_func(table);
 
 
 

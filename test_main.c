@@ -6,25 +6,36 @@
 #include "parser.c"
 
 hSymtab *table;
-/*
+
+const char *operNames[] = {"+", "-", "*", "/", "=", "==", ">", ">=", "<", "<=", "!", "!=", "(", ")", ":", ",", "tab", "new line", "keyword", "variable", "string", "int", "float", "indent", "dedent"};
+
+
 void print_sym_tab(hSymtab *table){
   DEBUG_PRINT("PRINTING WHOLE TABLE\n\n");
   for (int i = 0; i < HTAB_PRIME; i++){
-    if ((*table)[i] != NULL) {
-      if ((*table)[i]->data->type == TypeInt)
-        printf("\t |Variable: %s| \t |Value: %d| \t |Type: INT|\n", (*table)[i]->hKey, (*table)[i]->data->value_int);
-      else if ((*table)[i]->data->type == TypeString)
-        printf("\t |Variable: %s| \t |Value: %s| \t |Type: STRING|\n", (*table)[i]->hKey, (*table)[i]->data->value_str);
-      else if ((*table)[i]->data->type == TypeFloat)
-        printf("\t |Variable: %s| \t |Value: %f| \t |Type: FLOAT|\n", (*table)[i]->hKey, (*table)[i]->data->value_float);
+    if ((*table)[i]) {
+      printf("-------------------------------------------------------------------------------\n");
+      if ((*table)[i]->item_type == IT_VAR)
+        printf("VARIABLE: %-10s \t  %-5s %s\n", (*table)[i]->hKey, "|  TYPE:", operNames[((hSymtab_Var*)((*table)[i]->data))->type]);
+      else if ((*table)[i]->item_type == IT_FUNC) {
+        printf("FUNCTION: %-10s \t  %-5s %s\n", (*table)[i]->hKey, "|  RETURN TYPE:",operNames[((hSymtab_Func*)((*table)[i]->data))->return_type]);
+        hSymtab_Func_Param *paramets = ((hSymtab_Func*)((*table)[i]->data))->params;
+        if (!paramets)
+          printf("%-25s -> FUNCTION DOESN'T HAVE ANY PARAMETERS\n", " ");
+        else {
+          for (int i = 0; paramets; i++){
+              printf("%-25s -> PARAMETER nr.%d --> TYPE: %s\n", " ", i, operNames[paramets->param_type]);
+              paramets = paramets->next;
+          }
+        }
+      }
     }
   }
 }
-*/
 
 int main() {
   prog();
-  //print_sym_tab(table);
-  //printf("\n");
-  //DEBUG_PRINT("_____PARSING ENDED_____\n");
+  print_sym_tab(table);
+  printf("\n");
+  DEBUG_PRINT("_____PARSING ENDED_____\n");
 }

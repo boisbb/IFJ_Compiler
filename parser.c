@@ -61,6 +61,8 @@ extern char current_line[1000];
 int err = 0;
 extern hSymtab *table = NULL;
 
+int hovno(){}
+
 void assignment(Token *var, Token *value){
   if (GET_TOKEN_CHECK_EOF(value) || TOKEN_TYPE_NEEDED_CHECK(value->type, TypeNewLine)) {DEBUG_PRINT("Reached EOF or Newline where it shouldn't be\n"); exit(1);}
 

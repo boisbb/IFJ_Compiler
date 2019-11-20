@@ -122,6 +122,7 @@ void assignment(Token *var, Token *value){
 
 
 bool command(Token *token){
+
   if (TOKEN_TYPE_NEEDED_CHECK(token->type, TypeVariable)) {
 
     Token *token_n = malloc(sizeof(Token));
@@ -134,6 +135,15 @@ bool command(Token *token){
 
 
     }
+  }
+  //při zavolání tady už pak dál nefunguje
+  if (strcmp((char*)token->data, "def") == 0) {
+    if (fction_start(token) == 0){
+      printf("jsem zpátky v body/command\n");
+    }
+    if (GET_TOKEN_CHECK_EOF(token)) {DEBUG_PRINT("Reached EOF after function definition\n"); exit(1);}
+    body(token);
+
   }
   return false;
 }
@@ -156,6 +166,9 @@ void body(Token *token){
   }
 }
 
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//functions
+
 int fction_params(Token *token, hSymtab_it *symtab_it){
   //need new token, now token is left bracket
   if (GET_TOKEN_CHECK_EOF(token) || TOKEN_TYPE_NEEDED_CHECK(token->type, TypeNewLine)) {DEBUG_PRINT("Reached EOF or Newline where it shouldn't be\n"); exit(1);}
@@ -165,8 +178,6 @@ int fction_params(Token *token, hSymtab_it *symtab_it){
 
   while(!TOKEN_TYPE_NEEDED_CHECK(token->type, TypeRightBracket)){
 
-    //může být parametr další funkce?????
-
     if(TOKEN_TYPE_NEEDED_CHECK(token->type, TypeVariable)){
 
       check_comma = 0;
@@ -175,7 +186,6 @@ int fction_params(Token *token, hSymtab_it *symtab_it){
         if( !(((hSymtab_Func *)(symtab_it->data))->params = malloc(sizeof(hSymtab_Func_Param))) ){
           return 99;
         }
-        //add malloc chcek
 
         params = ((hSymtab_Func *)(symtab_it->data))->params;
         ((hSymtab_Func *)(symtab_it->data))->params->param_type = TypeUnspecified;
@@ -215,11 +225,6 @@ int fction_params(Token *token, hSymtab_it *symtab_it){
         params = params->next;
       }
 
-      //zapsat parametry do tabulky bez typu
-      /*
-      hSymtab_Func_Param *func_param;
-      *func_param = (hSymtab_Func_Param) malloc(sizeof(fct_param));
-      */
     }
     else if(TOKEN_TYPE_NEEDED_CHECK(token->type, TypeComma)){
       //printf("comma\n");
@@ -236,6 +241,29 @@ int fction_params(Token *token, hSymtab_it *symtab_it){
   }
   else{
     return 0;
+  }
+}
+
+int fction_body(Token *token, hSymtab_it *symtab_it){
+  int indent_counter = 0, dedent_counter = 1;
+
+  //create fction_ body, fction command, fction_assignment
+
+  //if there is indent, it is ok
+  if(TOKEN_TYPE_NEEDED_CHECK(token->type, TypeIndent)){
+    indent_counter++;
+    if (GET_TOKEN_CHECK_EOF(token)) {DEBUG_PRINT("Reached EOF where it shouldn't be\n"); exit(1);}
+
+    if(strcmp((char*)token->data, "return") == 0){
+      return 0;
+      //tady budu kontrolovat, jestli něco vracím a pokud jo, tak vrátím číslo
+      //a budu vědět, že už mám další token načtený
+
+    }
+
+  }
+  else{
+    return 1;
   }
 }
 
@@ -258,9 +286,7 @@ int fction_start(Token *token){
         symtab_add_it(table, fction_name); //add name of fction to table
 
         int fction_return = fction_params(token, symtab_it_position((char *)fction_name->data, table));
-        /*if( ( fction_params(token, symtab_it_position((char *)fction_name->data, table)) != 0){
-          return 1;
-        }*/
+
         if(fction_return == 1){
           printf("\n!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! nastala chyba !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n\n\n");
           return 1;
@@ -276,15 +302,38 @@ int fction_start(Token *token){
         //is there ":"" and EOF after ")"?
         if(TOKEN_TYPE_NEEDED_CHECK(token->type, TypeColon)){
           if(GET_TOKEN_CHECK_EOF(token) || TOKEN_TYPE_NEEDED_CHECK(token->type, TypeNewLine)){
-            printf("\nSPRÁVNĚ\n\n\n");
-
+            //konec hlavičky
             //generate???
-            return 0;
+            if (GET_TOKEN_CHECK_EOF(token)) {DEBUG_PRINT("Reached EOF where it shouldn't be\n"); exit(1);}
+            int fction_body_return = fction_body(token, symtab_it_position((char *)fction_name->data, table));
+            //after return check dedent
+            if (fction_body_return == 0){
+              printf("return\n");
+
+              //newline and dedend
+              if (GET_TOKEN_CHECK_EOF(token)) {DEBUG_PRINT("Reached EOF where it shouldn't be\n"); exit(1);}
+              if (GET_TOKEN_CHECK_EOF(token)) {DEBUG_PRINT("Reached EOF where it shouldn't be\n"); exit(1);}
+
+
+              //dořešit tady eof
+              if(TOKEN_TYPE_NEEDED_CHECK(token->type, TypeDedend)/* || token == EOF*/){
+                printf("je tady dedent\n");
+                return 0;
+
+              }
+              else{
+                return 1;
+              }
+            }
+            else if(fction_body_return == 1){
+              printf("špatně\n");
+            }
+
+            return 0; //?
           }
           printf("\n!!!!!!!!!!!!!!!!!!!!!!!!!! CHYBA UKONČENÍ HLAVIČKY !!!!!!!!!!!!!!!!!!!!!!!!!!!!\n\n\n");
           return 1;
         }
-        //fction_body();?? asi jo
       }
       else{
         return 1; //function already exists
@@ -296,6 +345,8 @@ int fction_start(Token *token){
     return 1; //token is not variable
   }
 }
+//end of functions
+///////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // FOR NOW EQUAL TO <prog>
 // <prog> -> <body>
@@ -318,7 +369,12 @@ int prog() {
 
 //zajistit volání
   if (strcmp((char*)token->data, "def") == 0) {
-    fction_start(token);
+    if (fction_start(token) == 0){
+      printf("jsem zpátky v prog\n");
+    }
+    if (GET_TOKEN_CHECK_EOF(token)) {DEBUG_PRINT("Reached EOF after function definition\n"); exit(1);}
+
+    body(token);
     //kontrolovat, co to vrátilo, kvůli returnům
     //volat znovu prog, a nebo další definici funkce udělat v body?
     //spíš v body

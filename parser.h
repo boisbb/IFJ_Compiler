@@ -20,3 +20,4 @@ extern char current_line[1000];
 
 int fction_start(Token *token);
 int fction_params(Token *token, hSymtab_it *symtab_it);
+int fction_body(Token *token, hSymtab_it *symtab_it);

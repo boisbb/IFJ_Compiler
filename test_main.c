@@ -7,7 +7,7 @@
 
 hSymtab *table;
 
-extern const char *operNames[] = {"+", "-", "*", "/", "=", "==", ">", ">=", "<", "<=", "!", "!=", "(", ")", ":", ",", "new line", "keyword", "variable", "string", "int", "float", "indent", "dedent"};
+extern const char *operNames[] = {"+", "-", "*", "/", "//", "=", "==", ">", ">=", "<", "<=", "!", "!=", "(", ")", ":", ",", "new line", "keyword", "variable", "string", "documentary string", "int", "float", "indent", "dedent"};
 
 
 void print_sym_tab(hSymtab *table){

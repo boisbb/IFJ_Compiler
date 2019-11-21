@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
-#include "sym_tab.h"
+//#include "sym_tab.h"
 #include "error.h"
 #include "expression.h"
 

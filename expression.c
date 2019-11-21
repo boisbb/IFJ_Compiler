@@ -14,9 +14,9 @@ int error;
 const char *operNames[];
 
 typedef enum {
-  OP_PLUSMINUS,
   OP_MULTDIV,
   OP_MULTDIVFLOOR,
+  OP_PLUSMINUS,
   OP_REL,
   LEFTPAR,
   RIGHTPAR,
@@ -98,6 +98,7 @@ int expression_eval(){
   while (1) {
 
     token_index = convert_token_type_to_prec_type(act_tok);
+    //DEBUG_PRINT("\nstack: %d token: %d\n\n", stack.top->prec_tab_id, token_index);
 
     DEBUG_PRINT("index: %c\n", PRECED_TABLE[stack.top->prec_tab_id][token_index]);
 

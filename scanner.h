@@ -9,6 +9,7 @@ typedef enum
 	TypeOperatorMinus,
 	TypeOperatorMul,
 	TypeOperatorDiv,
+	TypeOperatorFloorDiv,
 	TypeAssignment,
 	TypeEquality,
 	TypeGreater,
@@ -26,10 +27,13 @@ typedef enum
 	TypeKeyword,
 	TypeVariable,
 	TypeString,
+	TypeDocString,
 	TypeInt,
 	TypeFloat,
 	TypeIndent,
 	TypeDedend,
+
+	// Following tokens cant be returned from scanner
 	TypeUnspecified, // For adding variables into symtable
 	TypeFunc // For adding functions into symtable
 } Type;

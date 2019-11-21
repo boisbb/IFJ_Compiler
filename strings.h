@@ -9,17 +9,20 @@ typedef struct
 {
 	char *content;            /// string
 	size_t size;                 /// size of strings
-	int asize;                /// actual size of string
+	size_t asize;                /// actual size of string
 } String;
 
 // Creating an empty dynamic string, the string's size is alligned to 8
 int str_init(String *str);
 
+// Set content size, data will be deleted, size is aligned
+int str_set_size(String *str, size_t size);
+
 // Adds char to end of string.
 int str_pushc(String *str, char new_char);
 
 // Append string
-int str_push(String *str, char *new_str);
+int str_push(String *str, const char *new_str);
 
 // Delete last char, return that char
 char str_pop(String *str);

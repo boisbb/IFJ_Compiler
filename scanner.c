@@ -22,6 +22,8 @@ const char *keywords[] = {"def", "else", "if", "None", "pass", "return", "while"
 #define STATE_LESSER 262
 #define STATE_NEGATION 263
 
+#define STATE_DIV 264
+
 #define STATE_INDENTATION 267
 
 #define STATE_VARIABLE 268
@@ -32,11 +34,13 @@ const char *keywords[] = {"def", "else", "if", "None", "pass", "return", "while"
 #define STATE_STRING_HEX2 272
 
 #define STATE_LINE_COMMENT 275
-#define STATE_BLOCK_COMMENT_IN1 276
-#define STATE_BLOCK_COMMENT_IN2 277
-#define STATE_BLOCK_COMMENT 278
-#define STATE_BLOCK_COMMENT_OUT1 279
-#define STATE_BLOCK_COMMENT_OUT2 280
+
+#define STATE_DOC_STRING_IN1 276
+#define STATE_DOC_STRING_IN2 277
+#define STATE_DOC_STRING 278
+#define STATE_DOC_STRING_OUT1 279
+#define STATE_DOC_STRING_OUT2 280
+#define STATE_DOC_STRING_SPECIAL 281
 
 #define STATE_INT 283
 #define STATE_FLOAT 284
@@ -135,8 +139,7 @@ int get_next_token(Token *token)
 				}
 				else if(c == '/')
 				{
-					token->type = TypeOperatorDiv;
-					break_while = true;
+					state = STATE_DIV;
 				}
 				else if(c == '=')
 				{
@@ -185,7 +188,7 @@ int get_next_token(Token *token)
 				}
 				else if(c == '\"')
 				{
-					state = STATE_BLOCK_COMMENT_IN1;
+					state = STATE_DOC_STRING_IN1;
 				}
 				else if(c == '\'')
 				{
@@ -258,6 +261,18 @@ int get_next_token(Token *token)
 					}
 				}
 				break;
+			case STATE_DIV:
+				if(c == '/')
+				{
+					token->type = TypeOperatorFloorDiv;
+				}
+				else
+				{
+					ungetc(c, _stream);
+					token->type = TypeOperatorDiv;
+				}
+				break_while = true;
+				break;
 			case STATE_EQUALS:
 				if(c == '=')
 					token->type = TypeEquality;
@@ -304,33 +319,70 @@ int get_next_token(Token *token)
 				if(c == '\n')
 					state = STATE_INITIAL;
 				break;
-			case STATE_BLOCK_COMMENT_IN1:
+			case STATE_DOC_STRING_IN1:
 				if(c == '\"')
-					state = STATE_BLOCK_COMMENT_IN2;
+					state = STATE_DOC_STRING_IN2;
 				else
 					return ERROR_LEXICAL;
 				break;
-			case STATE_BLOCK_COMMENT_IN2:
+			case STATE_DOC_STRING_IN2:
 				if(c == '\"')
-					state = STATE_BLOCK_COMMENT;
+				{
+					if(!str_init(&str))
+						return ERROR_INTERNAL;
+					state = STATE_DOC_STRING;
+				}
 				else
 					return ERROR_LEXICAL;
 				break;
-			case STATE_BLOCK_COMMENT:
+			case STATE_DOC_STRING:
 				if(c == '\"')
-					state = STATE_BLOCK_COMMENT_OUT1;
-				break;
-			case STATE_BLOCK_COMMENT_OUT1:
-				if(c == '\"')
-					state = STATE_BLOCK_COMMENT_OUT2;
+					state = STATE_DOC_STRING_OUT1;
+				else if(c == '\\')
+					state = STATE_DOC_STRING_SPECIAL;
 				else
-					state = STATE_BLOCK_COMMENT;
+				{
+					if(!str_pushc(&str, c))
+						return ERROR_INTERNAL;
+				}
 				break;
-			case STATE_BLOCK_COMMENT_OUT2:
+			case STATE_DOC_STRING_SPECIAL:
 				if(c == '\"')
-					state = STATE_INITIAL;
+				{
+					if(!str_pushc(&str, c))
+						return ERROR_INTERNAL;
+					state = STATE_DOC_STRING;
+				}
 				else
-					state = STATE_BLOCK_COMMENT;
+				{
+					if(!str_pushc(&str, '\\'))
+						return ERROR_INTERNAL;
+					if(!str_pushc(&str, c))
+						return ERROR_INTERNAL;
+					state = STATE_DOC_STRING;
+				}
+				break;
+			case STATE_DOC_STRING_OUT1:
+				if(c == '\"')
+					state = STATE_DOC_STRING_OUT2;
+				else
+					state = STATE_DOC_STRING;
+				break;
+			case STATE_DOC_STRING_OUT2:
+				if(c == '\"')
+				{
+					token->type = TypeDocString;
+					if (!(token->data = malloc(sizeof(char) * str.asize + 1)))
+					{
+						str_free(&str);
+						return ERROR_INTERNAL;
+					}
+					strcpy(token->data, str.content);
+					str_free(&str);
+					break_while = true;
+				}
+				else
+					state = STATE_DOC_STRING;
 				break;
 			case STATE_STRING:
 				if(c == '\'')
@@ -597,7 +649,7 @@ int get_next_token(Token *token)
 }
 
 #if defined(DEBUG) && DEBUG > 0
-const char *type_names[] = {"+", "-", "*", "/", "=", "==", ">", ">=", "<", "<=", "!", "!=", "(", ")", ":", ",", /*"tab", */"new line", "keyword", "variable", "string", "int", "float", "indent", "dedent"};
+const char *type_names[] = {"+", "-", "*", "/", "//", "=", "==", ">", ">=", "<", "<=", "!", "!=", "(", ")", ":", ",", /*"tab", */"new line", "keyword", "variable", "string", "documentary string", "int", "float", "indent", "dedent"};
 int scanner_main()
 {
 	Token token = {};
@@ -607,7 +659,7 @@ int scanner_main()
 
 	while((err_num = get_next_token(&token)) == 0)
 	{
-		if(token.type == TypeString || token.type == TypeVariable || token.type == TypeKeyword)
+		if(token.type == TypeString || token.type == TypeVariable || token.type == TypeKeyword || token.type == TypeDocString)
 			printf("AToken type: %s | Token data: %s \n", type_names[token.type], (char*)token.data);
 		else if(token.type == TypeInt)
 			printf("Token type: %s | Token data: %i \n", type_names[token.type], *(int*)token.data);

@@ -9,6 +9,7 @@
  #define DEBUG_PRINT(fmt, args...) /* Don't do anything in release builds */
 #endif
 
+#define NO_ERROR 0
 #define ERROR_LEXICAL 1
 #define ERROR_SYNTAX 2
 #define ERROR_SEMANTIC 3

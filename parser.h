@@ -4,6 +4,7 @@
 
 #include "sym_tab.h"
 #include "error.h"
+#include "expression.h"
 
 extern char current_line[1000];
 

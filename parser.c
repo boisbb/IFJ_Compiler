@@ -41,7 +41,7 @@
 
 
 int err = 0;
-extern hSymtab *table = NULL;
+extern hSymtab *table;
 
 
 void assignment(Token *var, Token *value){
@@ -75,6 +75,14 @@ void assignment(Token *var, Token *value){
     }
   }
   else {
+
+
+
+    symtab_add_it(table, var);
+    err = expression(value, (*table)[symtab_hash_function((char*)var->data)]);
+    exit(1);
+
+    /*
     hSymtab_it *tmp_it;
     switch(value->type){
       // Add variable as Integer
@@ -116,7 +124,7 @@ void assignment(Token *var, Token *value){
       default:
         break;
 
-    }
+    }*/
   }
 }
 
@@ -142,7 +150,7 @@ bool command(Token *token){
       printf("jsem zpátky v body/command\n");
     }
     if (GET_TOKEN_CHECK_EOF(token)) {DEBUG_PRINT("Reached EOF after function definition\n"); exit(1);}
-    body(token);
+    body(token, table);
 
   }
   return false;

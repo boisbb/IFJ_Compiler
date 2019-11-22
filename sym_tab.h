@@ -12,6 +12,7 @@
 // Symtable item data
 typedef struct symIt_Var {
   int global; // 0 if its not global | 1 if its global
+  bool defined;
   Type type;
 
 } hSymtab_Var;

@@ -42,9 +42,16 @@
 
 int err = 0;
 extern hSymtab *table;
+const char *operNames[];
 
 
 void assignment(Token *var, Token *value){
+
+  // GENERATE INSTRUCTION //
+    printf("\t \tSENT TO GENERATOR: %s\n", (char*)var->data);
+    printf("\t \tSENT TO GENERATOR: %s\n", operNames[value->type]);
+  ///
+
   if (GET_TOKEN_CHECK_EOF(value) || TOKEN_TYPE_NEEDED_CHECK(value->type, TypeNewLine)) {DEBUG_PRINT("Reached EOF or Newline where it shouldn't be\n"); exit(1);}
 
   hSymtab_it *tmp_item_var;
@@ -76,10 +83,13 @@ void assignment(Token *var, Token *value){
   }
   else {
 
-
-
     symtab_add_it(table, var);
     err = expression(value, (*table)[symtab_hash_function((char*)var->data)]);
+    ((hSymtab_Var*)((*table)[symtab_hash_function((char*)var->data)]->data))->defined = true;
+    DEBUG_PRINT("The variable is type: %s\n", operNames[((hSymtab_Var*)((*table)[symtab_hash_function((char*)var->data)]->data))->type]);
+    DEBUG_PRINT("Next token is: %s\n", operNames[value->type]);
+
+    return err;
     exit(1);
 
     /*
@@ -129,7 +139,7 @@ void assignment(Token *var, Token *value){
 }
 
 
-bool command(Token *token){
+int command(Token *token){
 
   if (TOKEN_TYPE_NEEDED_CHECK(token->type, TypeVariable)) {
 
@@ -140,34 +150,35 @@ bool command(Token *token){
 
       free(token_n->data);
       assignment(token, token_n);
+      return err;
 
 
     }
   }
   //při zavolání tady už pak dál nefunguje
-  if (strcmp((char*)token->data, "def") == 0) {
+  else if (strcmp((char*)token->data, "def") == 0) {
     if (fction_start(token) == 0){
       printf("jsem zpátky v body/command\n");
     }
     if (GET_TOKEN_CHECK_EOF(token)) {DEBUG_PRINT("Reached EOF after function definition\n"); exit(1);}
-    body(token, table);
+    body(token);
 
   }
   return false;
 }
 
-void body(Token *token){
+int body(Token *token){
   command(token);
   if (GET_TOKEN_CHECK_EOF(token)) {DEBUG_PRINT("Found EOF, parsing terminated.\n"); return;}
   while (1) {
-      if (TOKEN_TYPE_NEEDED_CHECK(token->type, TypeNewLine)) {
+      if (err == NO_ERROR) {
 
         if (GET_TOKEN_CHECK_EOF(token)) {DEBUG_PRINT("Found EOF, parsing terminated.\n"); return;}
         command(token);
       }
       else{
         DEBUG_PRINT("Found EOF, parsing terminated.  %s\n", (char *)token->data);
-        return;
+        return err;
       }
       if (GET_TOKEN_CHECK_EOF(token)) {DEBUG_PRINT("Found EOF, parsing terminated.\n"); return;}
 

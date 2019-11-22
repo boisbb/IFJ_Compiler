@@ -75,6 +75,7 @@ void symtab_add_it(hSymtab *sym_tab, Token *token){
       (*sym_tab)[hash]->item_type = IT_VAR;
       ((hSymtab_Var*)((*sym_tab)[hash]->data))->global = -1;
       ((hSymtab_Var*)((*sym_tab)[hash]->data))->type = TypeUnspecified;
+      ((hSymtab_Var*)((*sym_tab)[hash]->data))->defined = false;
       break;
 
 

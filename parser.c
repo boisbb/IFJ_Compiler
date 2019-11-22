@@ -136,12 +136,16 @@ bool command(Token *token){
 
     }
   }
-  //při zavolání tady už pak dál nefunguje
+
   if (strcmp((char*)token->data, "def") == 0) {
     if (fction_start(token) == 0){
       printf("jsem zpátky v body/command\n");
     }
-    if (GET_TOKEN_CHECK_EOF(token)) {DEBUG_PRINT("Reached EOF after function definition\n"); exit(1);}
+    else{
+      printf("chyba\n");
+    }
+    //tady upravit aby prošlo, když vtupní kód končí definicí
+    if (GET_TOKEN_CHECK_EOF(token)); //{DEBUG_PRINT("Reached EOF after function definition\n"); exit(1);}
     body(token);
 
   }
@@ -312,12 +316,13 @@ int fction_start(Token *token){
 
               //newline and dedend
               if (GET_TOKEN_CHECK_EOF(token)) {DEBUG_PRINT("Reached EOF where it shouldn't be\n"); exit(1);}
-              if (GET_TOKEN_CHECK_EOF(token)) {DEBUG_PRINT("Reached EOF where it shouldn't be\n"); exit(1);}
+              //if (GET_TOKEN_CHECK_EOF(token)) {DEBUG_PRINT("Reached EOF where it shouldn't be\n"); exit(1);}
 
 
               //dořešit tady eof
-              if(TOKEN_TYPE_NEEDED_CHECK(token->type, TypeDedend)/* || token == EOF*/){
-                printf("je tady dedent\n");
+              //if(TOKEN_TYPE_NEEDED_CHECK(token->type, TypeDedend)/* || token == EOF*/){
+              if(GET_TOKEN_CHECK_EOF(token) || TOKEN_TYPE_NEEDED_CHECK(token->type, TypeDedend)){
+                printf("je tady dedent, nebo eof\n");
                 return 0;
 
               }
@@ -327,6 +332,7 @@ int fction_start(Token *token){
             }
             else if(fction_body_return == 1){
               printf("špatně\n");
+              return 1;
             }
 
             return 0; //?

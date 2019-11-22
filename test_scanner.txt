@@ -29,3 +29,14 @@ fun(x)
 
 d=10.0E-3
 _n_n <> 'afddasfs'
+
+print("""
+ausojdasio
+asdosdojfa
+fds
+as
+f
+ad #fdsfsd
+afddasfs
+ afasf a\" dfsd ""
+""")

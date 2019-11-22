@@ -19,6 +19,16 @@ int str_init(String *str)
 	return 1;
 }
 
+int str_set_size(String *str, size_t size)
+{
+    str->asize = 0;
+    size = align_size(size + 1);
+    if ((str->content = realloc(str->content, size)) == NULL)
+        return 0;
+    str->size = size;
+    return 1;
+}
+
 int str_pushc(String *str, char new_char)
 {
 	if (str->size < str->asize)
@@ -36,7 +46,7 @@ int str_pushc(String *str, char new_char)
 	return 1;
 }
 
-int str_push(String *str, char *new_str)
+int str_push(String *str, const char *new_str)
 {
 	if (str->size < str->asize)
 		return 0;

@@ -35,7 +35,9 @@ void print_sym_tab(hSymtab *table){
 
 int main() {
   prog();
-  print_sym_tab(table);
+  //print_sym_tab(table);
   printf("\n");
   DEBUG_PRINT("_____PARSING ENDED_____\n");
+  free_symtab(table);
+  free(table);
 }

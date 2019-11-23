@@ -45,3 +45,5 @@ int id_stack_init();
 int id_s_pop();
 
 int check_operators_and_operands_syntax(Type operator);
+
+int realize_function_call(hSymtab_Func* func_data);

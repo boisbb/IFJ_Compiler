@@ -1,1 +1,9 @@
-aha = len('auto')
+a = (2+4)/5*(0.5-3+5/4)
+b = 1 + 3
+c = a + b + 8
+
+def ok(a, b):
+  return a
+
+b = 'string'
+b = a

@@ -57,3 +57,5 @@ void symtab_add_it(hSymtab *sym_tab, Token *token);
 void symtab_add_var_data(hSymtab_it *symtab_it, Type type);
 
 void symtab_add_predef_func(hSymtab *table);
+
+void free_symtab(hSymtab *table);

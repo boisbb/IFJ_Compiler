@@ -1,1 +1,3 @@
-aha = len('auto')
+a = 3
+
+b = 2

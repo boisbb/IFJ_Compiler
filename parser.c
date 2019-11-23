@@ -158,13 +158,13 @@ int command(Token *token){
   //při zavolání tady už pak dál nefunguje
   else if (strcmp((char*)token->data, "def") == 0) {
     if (fction_start(token) == 0){
-      printf("jsem zpátky v body/command\n");
+      printf("jsem zpátky v body/command\n\n\n");
     }
     else{
       printf("chyba\n");
     }
-    //tady upravit aby prošlo, když vtupní kód končí definicí
-    if (GET_TOKEN_CHECK_EOF(token)); //{DEBUG_PRINT("Reached EOF after function definition\n"); exit(1);}
+    //tady upravit aby prošlo, když vstupní kód končí definicí
+    if (GET_TOKEN_CHECK_EOF(token)){DEBUG_PRINT("Reached EOF after function definition\n"); return 0;}//exit(1);}
     body(token);
 
   }
@@ -283,6 +283,9 @@ int fction_body(Token *token, hSymtab_it *symtab_it){
       //a budu vědět, že už mám další token načtený
 
     }
+    else{ //tady to bude jako body programu
+      return 1;
+    }
 
   }
   else{
@@ -395,9 +398,10 @@ int prog() {
 //zajistit volání
   if (strcmp((char*)token->data, "def") == 0) {
     if (fction_start(token) == 0){
-      printf("jsem zpátky v prog\n");
+      printf("jsem zpátky v prog\n\n\n");
     }
-    if (GET_TOKEN_CHECK_EOF(token)) {DEBUG_PRINT("Reached EOF after function definition\n"); exit(1);}
+    //může tam být jen definice?
+    if (GET_TOKEN_CHECK_EOF(token)) {DEBUG_PRINT("Reached EOF after function definition\n"); return 0;}//exit(1);}
 
     body(token);
     //kontrolovat, co to vrátilo, kvůli returnům

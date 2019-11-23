@@ -19,7 +19,7 @@ extern char current_line[1000];
 #define SUBSTR 31
 #define USERDEF 35
 
-int fction_start(Token *token);
+int fction_start(Token *token, hSymtab *table);
 int fction_params(Token *token, hSymtab_it *symtab_it);
 int fction_body(Token *token, hSymtab_it *symtab_it);
-int body(Token *token);
+int body(Token *token, hSymtab *table);

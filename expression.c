@@ -5,11 +5,13 @@
 #define P_SIZE 9
 
 hSymtab *table;
-TermStack stack;
+TermStack expr_stack;
 IdStack id_stack;
 hSymtab_it *variable;
-Token *act_tok;
+Token act_tok;
 int error;
+int id_stack_cnt = 0;
+
 
 const char *operNames[];
 
@@ -84,9 +86,14 @@ PRECED_TABLE_ITEM convert_token_type_to_prec_type(Token *token){
 // Processes the token
 int expression(Token *act_token, hSymtab_it *p_variable){
   variable = p_variable;
-  act_tok = act_token;
+  act_tok = *act_token;
   error = expression_eval();
-  act_token = act_tok;
+
+  free(expr_stack.top);
+  free(id_stack.top);
+  id_stack.top = NULL;
+
+  *act_token = act_tok;
   return error;
 }
 
@@ -97,19 +104,16 @@ int expression_eval(){
 
   while (1) {
 
-    token_index = convert_token_type_to_prec_type(act_tok);
-    //DEBUG_PRINT("\nstack: %d token: %d\n\n", stack.top->prec_tab_id, token_index);
+    token_index = convert_token_type_to_prec_type(&act_tok);
 
-    //DEBUG_PRINT("index: %c\n", PRECED_TABLE[stack.top->prec_tab_id][token_index]);
-
-    switch (PRECED_TABLE[stack.top->prec_tab_id][token_index]) {
+    switch (PRECED_TABLE[expr_stack.top->prec_tab_id][token_index]) {
 
       // Poping LEFTPAR from stack
       case 'E':
         //DEBUG_PRINT("Deleting: %s", operNames[stack.top->type]);
         s_pop();
 
-        if(get_next_token(act_tok) == EOF) {
+        if(get_next_token(&act_tok) == EOF) {
           DEBUG_PRINT("Parsing ended: found EOF.\n");
           return EOF;
         }
@@ -118,11 +122,21 @@ int expression_eval(){
 
       // Pushing on stack
       case '<':
-        //DEBUG_PRINT("Pushing: %s\n", operNames[act_tok->type]);
-        if (s_push(act_tok) == ERROR_SEMANTIC)
+        //DEBUG_PRINT("Pushing: %s\n", operNames[act_tok.type]);
+
+        if (act_tok.type == TypeVariable) {
+          hSymtab_it *tmp_sym_it = symtab_it_position((char*)act_tok.data, table);
+          if (tmp_sym_it) {
+            if (tmp_sym_it->item_type == IT_FUNC) {
+              error = realize_function_call((hSymtab_Func*)tmp_sym_it->data);
+            }
+          }
+        }
+
+        if (s_push(&act_tok) == ERROR_SEMANTIC)
           return ERROR_SEMANTIC;
 
-        if(get_next_token(act_tok) == EOF) {
+        if(get_next_token(&act_tok) == EOF) {
           DEBUG_PRINT("Parsing ended: found EOF.\n");
           return EOF;
         }
@@ -131,20 +145,20 @@ int expression_eval(){
 
       // Popping from stack and generating code for operand/operator
       case '>':
-        //DEBUG_PRINT("Popping: %s\n", operNames[stack.top->type]);
+        //DEBUG_PRINT("Popping: %s\n", operNames[expr_stack.top->type]);
         if (ready_to_pop() == ERROR_SYNTAX)
           return ERROR_SYNTAX;
 
         break;
       default:
 
-      if (act_tok->type == TypeNewLine) {
+      if (act_tok.type == TypeNewLine) {
         printf("FOUND NEWLINE\n");
         return NO_ERROR;
       }
 
-        DEBUG_PRINT("wut bruv\n");
-        return ERROR_SEMANTIC;
+        DEBUG_PRINT("SYNTAX ERROR: Wrong input.\n");
+        return ERROR_SYNTAX;
     }
 
 
@@ -155,86 +169,124 @@ int expression_eval(){
 
 // Initialization of the term stack
 int term_stack_init(){
-  if(!(stack.top = malloc(sizeof(TermStackIt)))){ DEBUG_PRINT("ERROR: allocation."); return ERROR_SEMANTIC_RUNTIME;}
-  stack.top->next = NULL;
-  stack.top->prev = NULL;
-  stack.top->tok_cont = NULL;
-  stack.top->type = TypeUnspecified;
-  stack.top->prec_tab_id = DOLLAR;
+  if(!(expr_stack.top = malloc(sizeof(TermStackIt)))){ DEBUG_PRINT("ERROR: allocation."); return ERROR_SEMANTIC_RUNTIME;}
+  expr_stack.top->next = NULL;
+  expr_stack.top->prev = NULL;
+  expr_stack.top->tok_cont = NULL;
+  expr_stack.top->type = TypeUnspecified;
+  expr_stack.top->prec_tab_id = DOLLAR;
 }
 
 
 int s_push(){
-  if (act_tok->type == TypeVariable){
-    if (((hSymtab_Var*)(symtab_it_position((char*)act_tok->data, table)->data))->defined == false) {
-      DEBUG_PRINT("ERROR: variable %s does not exist.\n", (char*)act_tok->data);
+
+  if (act_tok.type == TypeVariable){
+    if (!(symtab_it_position((char*)act_tok.data, table)) || ((hSymtab_Var*)(symtab_it_position((char*)act_tok.data, table)->data))->defined == false) {
+      DEBUG_PRINT("ERROR: variable %s does not exist.\n", (char*)act_tok.data);
       return ERROR_SEMANTIC;
     }
   }
-
-  if (!(stack.top->next = malloc(sizeof(TermStackIt))) || !(stack.top->next->prev = malloc(sizeof(TermStackIt)))) {
+                                                              /// REDUNDANT ALLOCATION //
+  if (!(expr_stack.top->next = malloc(sizeof(TermStackIt))) /*|| !(stack.top->next->prev = malloc(sizeof(TermStackIt)))*/) {
     DEBUG_PRINT("INTERNAL ERROR: Memory allocation failed.\n");
     return ERROR_INTERNAL;
   }
 
-  stack.top->next->prev = stack.top;
-  stack.top = stack.top->next;
-  stack.top->prec_tab_id = convert_token_type_to_prec_type(act_tok);
-  stack.top->type = act_tok->type;
-  stack.top->tok_cont = act_tok->data;
-  stack.top->next = NULL;
+  expr_stack.top->next->prev = expr_stack.top;
+  expr_stack.top = expr_stack.top->next;
+  expr_stack.top->prec_tab_id = convert_token_type_to_prec_type(&act_tok);
+  expr_stack.top->type = act_tok.type;
+  expr_stack.top->tok_cont = act_tok.data;
+  expr_stack.top->next = NULL;
 
   return NO_ERROR;
 }
 
 int s_pop(){
-  stack.top = stack.top->prev;
-  free(stack.top->next);
-  stack.top->next = NULL;
+  expr_stack.top = expr_stack.top->prev;
+  free(expr_stack.top->next);
+  expr_stack.top->next = NULL;
+}
+
+int s_free(){
+
+  //s_pop();
+
+  if (expr_stack.top->next == NULL) {
+    printf("NULLIOBROLIO\n");
+    exit(1);
+  }
 }
 
 int id_stack_init(){
-  //if(!(id_stack.top = malloc(sizeof(TermStackIt)))){ DEBUG_PRINT("ERROR: allocation."); return ERROR_SEMANTIC_RUNTIME;}
   id_stack.top = NULL;
 }
 
 int id_s_push(TermStackIt *term_item){
-  IdStackIt *item = malloc(sizeof(IdStackIt));
-  if (!(item = malloc(sizeof(IdStackIt)))) {
+  id_stack_cnt += 1;
+  Type type;
+
+  if (term_item->type == TypeVariable){
+    type = ((hSymtab_Var*)(symtab_it_position((char*)term_item->tok_cont, table)->data))->type;
+  }
+  else {
+    type = term_item->type;
+  }
+
+  if (!id_stack.top) {
+    if (!(id_stack.top = malloc(sizeof(IdStackIt)))) {
+      DEBUG_PRINT("INTERNAL ERROR: Memory allocation failed.\n");
+      return ERROR_INTERNAL;
+    }
+    id_stack.top->right = NULL;
+    id_stack.top->left = NULL;
+    id_stack.top->type = type;
+    id_stack.top->content = term_item->tok_cont;
+    return NO_ERROR;
+  }
+
+  if (!(id_stack.top->right = malloc(sizeof(IdStackIt)))) {
     DEBUG_PRINT("INTERNAL ERROR: Memory allocation failed.\n");
     return ERROR_INTERNAL;
   }
 
-  item->content = term_item->tok_cont;
-  item->type = term_item->type;
-  item->left = id_stack.top;
-  item->right = NULL;
-  id_stack.top = item;
-}
-
-int id_s_pop(){
-  id_stack.top = id_stack.top->left;
-  free(id_stack.top->right);
+  id_stack.top->right->left = id_stack.top;
+  id_stack.top = id_stack.top->right;
+  id_stack.top->type = type;
+  id_stack.top->content = term_item->tok_cont;
   id_stack.top->right = NULL;
 }
 
+int id_s_pop(){
+  id_stack_cnt -= 1;
+  id_stack.top = id_stack.top->left;
+  free(id_stack.top->right);
+}
+
 int ready_to_pop(){
-  switch (stack.top->prec_tab_id) {
+  switch (expr_stack.top->prec_tab_id) {
 
     case IDENTIFIER:
+
       if (id_stack.top == NULL) {
         id_stack_init();
       }
 
-      switch (stack.top->type) {
+      switch (expr_stack.top->type) {
         case TypeVariable:
-          if (!(symtab_it_position((char*)stack.top->tok_cont, table))) {
-            DEBUG_PRINT("ERROR: variable %s does not exist.\n", (char*)stack.top->tok_cont);
+          if (!(symtab_it_position((char*)expr_stack.top->tok_cont, table))) {
+            DEBUG_PRINT("ERROR: variable %s does not exist.\n", (char*)expr_stack.top->tok_cont);
             return ERROR_SEMANTIC;
           }
           else {
-            if (symtab_it_position((char*)stack.top->tok_cont, table)->item_type == IT_VAR){
-              id_s_push(stack.top);
+            if (symtab_it_position((char*)expr_stack.top->tok_cont, table)->item_type == IT_VAR){
+              id_s_push(expr_stack.top);
+
+              // Maybe change //
+              if (variable)
+                ((hSymtab_Var*)variable->data)->type = id_stack.top->type;
+
+              printf("\t \tSENT TO GENERATOR: %s\n", (char*)expr_stack.top->tok_cont);
 
             }
             /*
@@ -249,15 +301,20 @@ int ready_to_pop(){
         case TypeString:
 
           // GENERATE INSTRUCTION //
-          if (stack.top->type == TypeInt)
-            printf("\t \tSENT TO GENERATOR: %d\n", *(int*)stack.top->tok_cont);
-          else if (stack.top->type == TypeFloat)
-            printf("\t \tSENT TO GENERATOR: %f\n", *(double*)stack.top->tok_cont);
+          if (expr_stack.top->type == TypeInt)
+            printf("\t \tSENT TO GENERATOR: %d\n", *(int*)expr_stack.top->tok_cont);
+          else if (expr_stack.top->type == TypeFloat)
+            printf("\t \tSENT TO GENERATOR: %f\n", *(double*)expr_stack.top->tok_cont);
           else
-            printf("\t \tSENT TO GENERATOR: %s\n", (char*)stack.top->tok_cont);
+            printf("\t \tSENT TO GENERATOR: %s\n", (char*)expr_stack.top->tok_cont);
           ///
 
-          id_s_push(stack.top);
+          id_s_push(expr_stack.top);
+
+          // Maybe change //
+          if (variable)
+            ((hSymtab_Var*)variable->data)->type = id_stack.top->type;
+
           break;
 
         default:
@@ -266,28 +323,28 @@ int ready_to_pop(){
       break;
 
     case OP_PLUSMINUS:
-      if(check_operators_and_operands_syntax(stack.top->type) == ERROR_SYNTAX)
+      if(check_operators_and_operands_syntax(expr_stack.top->type) == ERROR_SYNTAX)
         return ERROR_SYNTAX;
 
       // GENERATE INSTRUCTION //
-      printf("\t \tSENT TO GENERATOR: %c\n", stack.top->type == TypeOperatorPlus ? '+' : '-');
+      printf("\t \tSENT TO GENERATOR: %c\n", expr_stack.top->type == TypeOperatorPlus ? '+' : '-');
       ///
       break;
     case OP_MULTDIV:
-      if(check_operators_and_operands_syntax(stack.top->type) == ERROR_SYNTAX)
+      if(check_operators_and_operands_syntax(expr_stack.top->type) == ERROR_SYNTAX)
         return ERROR_SYNTAX;
 
       // GENERATE INSTRUCTION //
-      printf("\t \tSENT TO GENERATOR: %c\n", stack.top->type == TypeOperatorMul ? '*' : '/');
+      printf("\t \tSENT TO GENERATOR: %c\n", expr_stack.top->type == TypeOperatorMul ? '*' : '/');
       ///
       break;
 
     case OP_REL:
-      if(check_operators_and_operands_syntax(stack.top->type) == ERROR_SYNTAX)
+      if(check_operators_and_operands_syntax(expr_stack.top->type) == ERROR_SYNTAX)
         return ERROR_SYNTAX;
 
       // GENERATE INSTRUCTION //
-      printf("\t \tSENT TO GENERATOR: %s\n", operNames[stack.top->type]);
+      printf("\t \tSENT TO GENERATOR: %s\n", operNames[expr_stack.top->type]);
       ///
       break;
 
@@ -298,15 +355,76 @@ int ready_to_pop(){
 
 
   s_pop();
-  /*
-  if (id_stack.top->type == TypeInt)
-    printf("\t \tID STACK TOP: %d | STACK TOP TYPE: %d\n", *(int*)id_stack.top->content, stack.top->prec_tab_id);
-  else if (id_stack.top->type == TypeFloat)
-    printf("\t \tID STACK TOP: %f | STACK TOP TYPE: %d\n", *(double*)id_stack.top->content, stack.top->prec_tab_id);
-  else
-    printf("\t \tID STACK TOP: %s | STACK TOP TYPE: %d\n", (char*)id_stack.top->content, stack.top->prec_tab_id);
-  */
   return NO_ERROR;
+
+}
+
+int realize_function_call(hSymtab_Func* func_data){
+  int param_cnt = symtab_num_of_fction_params(func_data);
+  hSymtab_Func_Param *act_parameters = func_data->params;
+
+  // Push fction name
+  s_push(&act_tok);
+
+  if(get_next_token(&act_tok) == EOF) {
+    DEBUG_PRINT("Parsing ended: found EOF.\n");
+    return EOF;
+  }
+
+  if (act_tok.type != TypeLeftBracket) {
+    DEBUG_PRINT("SYNTAX ERROR: Expected Left Parentheses.\n");
+    return ERROR_SYNTAX;
+  }
+
+  if(get_next_token(&act_tok) == EOF) {
+    DEBUG_PRINT("Found EOF.\n");
+    return EOF;
+  }
+
+  if (convert_token_type_to_prec_type(&act_tok) != IDENTIFIER && act_tok.type != TypeRightBracket) {
+    DEBUG_PRINT("SYNTAX ERROR: Expected function parameter or right Parentheses.\n");
+    return ERROR_SYNTAX;
+  }
+  else if (act_tok.type == TypeRightBracket && param_cnt != 0) {
+    DEBUG_PRINT("SYNTAX ERROR: Function did not recieve needed parameters.\n");
+    return ERROR_SYNTAX;
+  }
+
+
+  // Pushing first parameter, decrementing param_cnt
+  s_push(&act_tok);
+  param_cnt--;
+
+
+  while(1) {
+    if (act_parameters) {
+      if(get_next_token(&act_tok) == EOF) {
+        DEBUG_PRINT("Found EOF.\n");
+        return EOF;
+      }
+
+      if (convert_token_type_to_prec_type(&act_tok) != IDENTIFIER && act_tok.type != TypeRightBracket) {
+        DEBUG_PRINT("SYNTAX ERROR: Expected function parameter or right Parentheses.\n");
+        return ERROR_SYNTAX;
+      }
+      else if (convert_token_type_to_prec_type(&act_tok) != IDENTIFIER && param_cnt != 0){
+
+        // Also needed check for type of parametr
+
+        // Pushing first parameter, decrementing param_cnt
+        s_push(&act_tok);
+        param_cnt--;
+      }
+      else if (act_tok.type == TypeRightBracket && param_cnt != 0) {
+        DEBUG_PRINT("SYNTAX ERROR: Function did not recieve needed parameters.\n");
+        return ERROR_SYNTAX;
+      }
+      else if(act_tok.type == TypeRightBracket && param_cnt == 0){
+        break;
+      }
+
+    }
+  }
 
 }
 
@@ -322,6 +440,7 @@ int check_operators_and_operands_syntax(Type operator){
   IdStackIt l_operand = *id_stack.top->left;
   IdStackIt r_operand = *id_stack.top;
   Type result;
+
 
   // When both operands are INT, there is no need for any syntax check
   if (l_operand.type == TypeInt && r_operand.type == TypeInt && operator != TypeOperatorDiv) {

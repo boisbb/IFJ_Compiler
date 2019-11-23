@@ -56,6 +56,7 @@ void assignment(Token *var, Token *value){
 
   hSymtab_it *tmp_item_var;
   hSymtab_it *tmp_item_value;
+  /*
   // TODO if the variable has already been added to symtab
   if ((tmp_item_var = symtab_it_position((char*)var->data, table))) {
     if (!(tmp_item_value = symtab_it_position((char*)value->data, table))) {
@@ -81,16 +82,18 @@ void assignment(Token *var, Token *value){
       }
     }
   }
-  else {
-
-    symtab_add_it(table, var);
+  else {*/
+    if (!symtab_it_position((char*)var->data, table))
+      symtab_add_it(table, var);
     err = expression(value, (*table)[symtab_hash_function((char*)var->data)]);
+    if (err == ERROR_SYNTAX || err == ERROR_SEMANTIC) {
+      return err;
+    }
     ((hSymtab_Var*)((*table)[symtab_hash_function((char*)var->data)]->data))->defined = true;
     DEBUG_PRINT("The variable is type: %s\n", operNames[((hSymtab_Var*)((*table)[symtab_hash_function((char*)var->data)]->data))->type]);
     DEBUG_PRINT("Next token is: %s\n", operNames[value->type]);
 
     return err;
-    exit(1);
 
     /*
     hSymtab_it *tmp_it;
@@ -134,28 +137,29 @@ void assignment(Token *var, Token *value){
       default:
         break;
 
-    }*/
-  }
+    }
+  }*/
 }
 
 
 int command(Token *token){
 
   if (TOKEN_TYPE_NEEDED_CHECK(token->type, TypeVariable)) {
-
     Token *token_n = malloc(sizeof(Token));
+
     if (GET_TOKEN_CHECK_EOF(token_n)) {DEBUG_PRINT("Reached EOF where it shouldn't be\n"); exit(1);}
+
+
 
     if (TOKEN_TYPE_NEEDED_CHECK(token_n->type, TypeAssignment)) {
 
-      free(token_n->data);
       assignment(token, token_n);
+      free(token_n);
       return err;
 
 
     }
   }
-  //při zavolání tady už pak dál nefunguje
   else if (strcmp((char*)token->data, "def") == 0) {
     if (fction_start(token) == 0){
       printf("jsem zpátky v body/command\n\n\n");
@@ -172,13 +176,13 @@ int command(Token *token){
 }
 
 int body(Token *token){
-  command(token);
-  if (GET_TOKEN_CHECK_EOF(token)) {DEBUG_PRINT("Found EOF, parsing terminated.\n"); return;}
   while (1) {
       if (err == NO_ERROR) {
-
-        if (GET_TOKEN_CHECK_EOF(token)) {DEBUG_PRINT("Found EOF, parsing terminated.\n"); return;}
         command(token);
+        if (err == ERROR_SYNTAX || err == ERROR_SEMANTIC) {
+          DEBUG_PRINT("Error occured, parsing ended.\n");
+          return err;
+        }
       }
       else{
         DEBUG_PRINT("Found EOF, parsing terminated.  %s\n", (char *)token->data);
@@ -412,6 +416,9 @@ int prog() {
   else {
     body(token);
   }
-
+  /*
+  free_symtab(table);
+  free(table);
+  */
   return 0;
 }

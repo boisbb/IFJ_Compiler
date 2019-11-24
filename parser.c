@@ -72,7 +72,7 @@ void assignment(Token *var, Token *value, hSymtab *act_table){
 }
 
 
-int command(Token *token, hSymtab *act_table){
+int command(Token *token, hSymtab *act_table, int in_function){
 
   if (TOKEN_TYPE_NEEDED_CHECK(token->type, TypeVariable)) {
     Token *token_n = malloc(sizeof(Token));
@@ -98,8 +98,13 @@ int command(Token *token, hSymtab *act_table){
       printf("chyba\n");
     }
     //tady upravit aby prošlo, když vstupní kód končí definicí
-    if (GET_TOKEN_CHECK_EOF(token)){DEBUG_PRINT("Reached EOF after function definition\n"); return 0;}//exit(1);}
-    body(token, act_table);
+    if (in_function == 1){
+      return;
+    }
+    else{
+      if (GET_TOKEN_CHECK_EOF(token)){DEBUG_PRINT("Reached EOF after function definition\n"); return 0;}//exit(1);}
+      body(token, act_table);
+    }
 
   }
   return false;
@@ -108,7 +113,7 @@ int command(Token *token, hSymtab *act_table){
 int body(Token *token, hSymtab *act_table){
   while (1) {
       if (err == NO_ERROR) {
-        command(token, act_table);
+        command(token, act_table, 0);
         if (err == ERROR_SYNTAX || err == ERROR_SEMANTIC) {
           DEBUG_PRINT("Error occured, parsing ended.\n");
           return err;
@@ -132,7 +137,7 @@ int fction_params(Token *token, hSymtab_it *symtab_it){
   int check_comma = 0; //params should not end with comma
   bool malloc_check = false; //we want malloc only fist time
   hSymtab_Func_Param *params = NULL;
-  int param_counter = 0;
+  unsigned param_counter = 0;
 
   while(!TOKEN_TYPE_NEEDED_CHECK(token->type, TypeRightBracket)){
     if(TOKEN_TYPE_NEEDED_CHECK(token->type, TypeVariable)){
@@ -194,6 +199,9 @@ int fction_params(Token *token, hSymtab_it *symtab_it){
 
         strcpy(params->next->paramName, (char*)token->data);
 
+        /* sterv bool generate_fnc_param_get(char* label, unsigned index); -> param_counter
+        label je nazev parametru, a index je cislo parametru
+        nazev by mel byt (char*)token->data*/
 
         //sterv params->paramName = (char*)token->data;
         params = params->next;
@@ -233,6 +241,7 @@ int fction_body(Token *token, hSymtab_it *symtab_it){
   symtab_init(local_table);
   symtab_add_predef_func(local_table);
 
+
   //to copy params to local_table
   hSymtab_Func_Param *params = NULL;
   params = ((hSymtab_Func *)(symtab_it->data))->params;
@@ -254,10 +263,9 @@ int fction_body(Token *token, hSymtab_it *symtab_it){
     indent_counter++;
     if (GET_TOKEN_CHECK_EOF(token)) {DEBUG_PRINT("Reached EOF where it shouldn't be\n"); exit(1);}
 
-    //NEFUNGUJE DEFINICE UVNITŘ FUNKCE
       while (strcmp((char*)token->data, "return") != 0) {
           if (err == NO_ERROR) {
-            command(token, local_table);
+            command(token, local_table, 1);
             if (err == ERROR_SYNTAX || err == ERROR_SEMANTIC) {
               DEBUG_PRINT("Error occured, parsing ended.\n");
               return err;
@@ -338,6 +346,9 @@ int fction_start(Token *token, hSymtab *act_table){
   if(TOKEN_TYPE_NEEDED_CHECK(token->type, TypeVariable)){
     Token fction_name = *token;
 
+    /*sterv na radku 369 by melo byt bool generate_fnc_begin(char* label);
+    label je nazev fce*/
+
     //sterv bool generate_fnc_begin(char* label);
 
     //check if next token is left bracket and not EOF or newline
@@ -373,6 +384,9 @@ int fction_start(Token *token, hSymtab *act_table){
             int fction_body_return = fction_body(token, symtab_it_position((char *)fction_name.data, act_table));
             //after return check dedent
             //function has return value
+
+            //sterv generate_fnc_end(char* label)
+
             if (fction_body_return == 0){
               printf("return\n");
               //newline

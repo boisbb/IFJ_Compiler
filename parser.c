@@ -132,11 +132,12 @@ int fction_params(Token *token, hSymtab_it *symtab_it){
   int check_comma = 0; //params should not end with comma
   bool malloc_check = false; //we want malloc only fist time
   hSymtab_Func_Param *params = NULL;
+  int param_counter = 0;
 
   while(!TOKEN_TYPE_NEEDED_CHECK(token->type, TypeRightBracket)){
 
     if(TOKEN_TYPE_NEEDED_CHECK(token->type, TypeVariable)){
-
+      param_counter++;
       check_comma = 0;
       if (malloc_check == false){
 
@@ -147,10 +148,12 @@ int fction_params(Token *token, hSymtab_it *symtab_it){
         params = ((hSymtab_Func *)(symtab_it->data))->params;
         ((hSymtab_Func *)(symtab_it->data))->params->param_type = TypeUnspecified;
 
-        if( !(((hSymtab_Func *)(symtab_it->data))->params->paramName = malloc(sizeof(char)*strlen((char*)token->data))) ){
+       if( !(((hSymtab_Func *)(symtab_it->data))->params->paramName = malloc(sizeof(char)*strlen((char*)token->data))) ){
           return 99; //malloc error
         }
         strcpy(params->paramName, (char*)token->data);
+
+        //sterv params->paramName = (char*)token->data;
         //no need to check name, it is first param
 
         malloc_check = true;
@@ -181,6 +184,9 @@ int fction_params(Token *token, hSymtab_it *symtab_it){
         }
 
         strcpy(params->next->paramName, (char*)token->data);
+
+
+        //sterv params->paramName = (char*)token->data;
         params = params->next;
       }
 
@@ -214,12 +220,10 @@ int fction_body(Token *token, hSymtab_it *symtab_it){
   symtab_init(local_table);
   symtab_add_predef_func(local_table);
 
-  //překopírovat parametry do lokální tabulky prvků
-
+  //to copy params to local_table
   hSymtab_Func_Param *params = NULL;
   params = ((hSymtab_Func *)(symtab_it->data))->params;
   Token param;
-
 
   while(params != NULL){
     param.data = params->paramName;

@@ -177,7 +177,8 @@ int fction_params(Token *token, hSymtab_it *symtab_it){
           return 99;
         }
 
-        ((hSymtab_Func *)(symtab_it->data))->params->param_type = TypeUnspecified;
+        params->next->param_type = TypeUnspecified;
+
 
         if( !(params->next->paramName = malloc(sizeof(char)*strlen((char*)token->data))) ){
           return 99;

@@ -72,7 +72,7 @@ void assignment(Token *var, Token *value, hSymtab *act_table){
 }
 
 
-int command(Token *token, hSymtab *act_table){
+int command(Token *token, hSymtab *act_table, int in_function){
 
   if (TOKEN_TYPE_NEEDED_CHECK(token->type, TypeVariable)) {
     Token *token_n = malloc(sizeof(Token));
@@ -98,8 +98,13 @@ int command(Token *token, hSymtab *act_table){
       printf("chyba\n");
     }
     //tady upravit aby prošlo, když vstupní kód končí definicí
-    if (GET_TOKEN_CHECK_EOF(token)){DEBUG_PRINT("Reached EOF after function definition\n"); return 0;}//exit(1);}
-    body(token, act_table);
+    if (in_function == 1){
+      return;
+    }
+    else{
+      if (GET_TOKEN_CHECK_EOF(token)){DEBUG_PRINT("Reached EOF after function definition\n"); return 0;}//exit(1);}
+      body(token, act_table);
+    }
 
   }
   return false;
@@ -108,7 +113,7 @@ int command(Token *token, hSymtab *act_table){
 int body(Token *token, hSymtab *act_table){
   while (1) {
       if (err == NO_ERROR) {
-        command(token, act_table);
+        command(token, act_table, 0);
         if (err == ERROR_SYNTAX || err == ERROR_SEMANTIC) {
           DEBUG_PRINT("Error occured, parsing ended.\n");
           return err;
@@ -243,10 +248,9 @@ int fction_body(Token *token, hSymtab_it *symtab_it){
     indent_counter++;
     if (GET_TOKEN_CHECK_EOF(token)) {DEBUG_PRINT("Reached EOF where it shouldn't be\n"); exit(1);}
 
-    //NEFUNGUJE DEFINICE UVNITŘ FUNKCE
       while (strcmp((char*)token->data, "return") != 0) {
           if (err == NO_ERROR) {
-            command(token, local_table);
+            command(token, local_table, 1);
             if (err == ERROR_SYNTAX || err == ERROR_SEMANTIC) {
               DEBUG_PRINT("Error occured, parsing ended.\n");
               return err;

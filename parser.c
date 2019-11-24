@@ -45,7 +45,7 @@ extern hSymtab *table;
 const char *operNames[];
 
 
-void assignment(Token *var, Token *value, hSymtab *table){
+void assignment(Token *var, Token *value, hSymtab *act_table){
 
   // GENERATE INSTRUCTION //
     printf("\t \tSENT TO GENERATOR: %s\n", (char*)var->data);
@@ -56,93 +56,23 @@ void assignment(Token *var, Token *value, hSymtab *table){
 
   hSymtab_it *tmp_item_var;
   hSymtab_it *tmp_item_value;
-  /*
-  // TODO if the variable has already been added to symtab
-  if ((tmp_item_var = symtab_it_position((char*)var->data, table))) {
-    if (!(tmp_item_value = symtab_it_position((char*)value->data, table))) {
-      if (tmp_item_var->item_type == IT_VAR) {
-        if (!(TOKEN_TYPE_NEEDED_CHECK(((hSymtab_Var*)tmp_item_var->data)->type, value->type))) {
-          DEBUG_PRINT("SYNTAX ERROR: Variable assigning incorrect value to variable %s.\n", (char*)var->data);
-          exit(1);
-        }
-      }
-    }
-    else {
-      if (tmp_item_value->item_type == IT_VAR) {
-        if (!(TOKEN_TYPE_NEEDED_CHECK(((hSymtab_Var*)tmp_item_var->data)->type, ((hSymtab_Var*)tmp_item_value->data)->type))) {
-          DEBUG_PRINT("SYNTAX ERROR: Variable assigning incorrect value to variable %s.\n", (char*)var->data);
-          exit(1);
-        }
-      }
-      else if (tmp_item_value->item_type == IT_FUNC){
-        if (!(TOKEN_TYPE_NEEDED_CHECK(((hSymtab_Var*)tmp_item_var->data)->type, ((hSymtab_Func*)tmp_item_value->data)->return_type))) {
-          DEBUG_PRINT("SYNTAX ERROR: Variable assigning incorrect value to variable %s.\n", (char*)var->data);
-          exit(1);
-        }
-      }
-    }
-  }
-  else {*/
-    if (!symtab_it_position((char*)var->data, table))
-      symtab_add_it(table, var);
-    err = expression(value, (*table)[symtab_hash_function((char*)var->data)]);
+
+    if (!symtab_it_position((char*)var->data, act_table))
+      symtab_add_it(act_table, var);
+    err = expression(value, (*act_table)[symtab_hash_function((char*)var->data)], act_table);
     if (err == ERROR_SYNTAX || err == ERROR_SEMANTIC) {
       return err;
     }
-    ((hSymtab_Var*)((*table)[symtab_hash_function((char*)var->data)]->data))->defined = true;
-    DEBUG_PRINT("The variable is type: %s\n", operNames[((hSymtab_Var*)((*table)[symtab_hash_function((char*)var->data)]->data))->type]);
+    ((hSymtab_Var*)((*act_table)[symtab_hash_function((char*)var->data)]->data))->defined = true;
+    DEBUG_PRINT("The variable is type: %s\n", operNames[((hSymtab_Var*)((*act_table)[symtab_hash_function((char*)var->data)]->data))->type]);
     DEBUG_PRINT("Next token is: %s\n", operNames[value->type]);
 
     return err;
 
-    /*
-    hSymtab_it *tmp_it;
-    switch(value->type){
-      // Add variable as Integer
-      case TypeInt:
-        symtab_add_it(table, var);
-        symtab_add_var_data((*table)[symtab_hash_function((char*)var->data)], TypeInt);
-        break;
-      // Add variable as String
-      case TypeString:
-        symtab_add_it(table, var);
-        symtab_add_var_data((*table)[symtab_hash_function((char*)var->data)], TypeString);
-        break;
-      // Add variable as Float
-      case TypeFloat:
-        symtab_add_it(table, var);
-        symtab_add_var_data((*table)[symtab_hash_function((char*)var->data)], TypeFloat);
-        break;
-      // Add variable as same type as Variable
-      case TypeVariable:
-        if (!(tmp_it = symtab_it_position((char*)value->data, table))) {
-          DEBUG_PRINT("SYNTAX ERROR: The variable %s is non-existent.\n", (char*)value->data);
-          exit(1);
-        }
-        if (tmp_it->item_type == IT_VAR) {
-          symtab_add_it(table, var);
-          symtab_add_var_data((*table)[symtab_hash_function((char*)var->data)], ((hSymtab_Var*)(tmp_it->data))->type);
-        }
-        else if (tmp_it->item_type == IT_FUNC) {
-          symtab_add_it(table, var);
-          symtab_add_var_data((*table)[symtab_hash_function((char*)var->data)], ((hSymtab_Func*)(tmp_it->data))->return_type);
-        }
-        else {
-          DEBUG_PRINT("UNDEFINED ERROR.\n");
-          exit(1);
-        }
-
-        break;
-
-      default:
-        break;
-
-    }
-  }*/
 }
 
 
-int command(Token *token, hSymtab *table){
+int command(Token *token, hSymtab *act_table){
 
   if (TOKEN_TYPE_NEEDED_CHECK(token->type, TypeVariable)) {
     Token *token_n = malloc(sizeof(Token));
@@ -153,7 +83,7 @@ int command(Token *token, hSymtab *table){
 
     if (TOKEN_TYPE_NEEDED_CHECK(token_n->type, TypeAssignment)) {
 
-      assignment(token, token_n, table);
+      assignment(token, token_n, act_table);
       free(token_n);
       return err;
 
@@ -161,7 +91,7 @@ int command(Token *token, hSymtab *table){
     }
   }
   else if (strcmp((char*)token->data, "def") == 0) {
-    if (fction_start(token, table) == 0){
+    if (fction_start(token, act_table) == 0){
       printf("jsem zpátky v body/command\n\n\n");
     }
     else{
@@ -169,23 +99,23 @@ int command(Token *token, hSymtab *table){
     }
     //tady upravit aby prošlo, když vstupní kód končí definicí
     if (GET_TOKEN_CHECK_EOF(token)){DEBUG_PRINT("Reached EOF after function definition\n"); return 0;}//exit(1);}
-    body(token, table);
+    body(token, act_table);
 
   }
   return false;
 }
 
-int body(Token *token, hSymtab *table){
+int body(Token *token, hSymtab *act_table){
   while (1) {
       if (err == NO_ERROR) {
-        command(token, table);
+        command(token, act_table);
         if (err == ERROR_SYNTAX || err == ERROR_SEMANTIC) {
           DEBUG_PRINT("Error occured, parsing ended.\n");
           return err;
         }
       }
       else{
-        DEBUG_PRINT("Found EOF, parsing terminated.  %s\n", (char *)token->data);
+        DEBUG_PRINT("Found EOF, parsing terminated.\n");
         return err;
       }
       if (GET_TOKEN_CHECK_EOF(token)) {DEBUG_PRINT("Found EOF, parsing terminated.\n"); return;}
@@ -285,20 +215,20 @@ int fction_body(Token *token, hSymtab_it *symtab_it){
   symtab_add_predef_func(local_table);
 
   //překopírovat parametry do lokální tabulky prvků
-  /*
+
   hSymtab_Func_Param *params = NULL;
   params = ((hSymtab_Func *)(symtab_it->data))->params;
+  Token param;
+
 
   while(params != NULL){
-    printf("test\n");
-    Token *param = malloc(sizeof(Token));
-    param->data = params->paramName;
-    param->type = params->param_type;
-    symtab_add_it(local_table, param);
+    param.data = params->paramName;
+    param.type = TypeVariable;
+    symtab_add_it(local_table, &param);
+    ((hSymtab_Var*)symtab_it_position((char*)param.data, local_table)->data)->defined = true;
     params = params->next;
   }
 
-  */
   //if there is indent, it is ok
   if(TOKEN_TYPE_NEEDED_CHECK(token->type, TypeIndent)){
     indent_counter++;
@@ -342,6 +272,7 @@ int fction_body(Token *token, hSymtab_it *symtab_it){
         print_sym_tab(local_table);
         printf("<-------------------------END\n\n\n");
         free_symtab(local_table);
+        free(local_table);
         return 0;
       }
       else{
@@ -359,26 +290,26 @@ int fction_body(Token *token, hSymtab_it *symtab_it){
   }
 }
 
-int fction_start(Token *token, hSymtab *table){
+int fction_start(Token *token, hSymtab *act_table){
   //return 1 = error
   if (GET_TOKEN_CHECK_EOF(token)) {DEBUG_PRINT("Reached EOF or Newline where it shouldn't be\n"); exit(1);}
 
   //beginning of function
   if(TOKEN_TYPE_NEEDED_CHECK(token->type, TypeVariable)){
-    Token *fction_name = token;
+    Token fction_name = *token;
 
     //check if next token is left bracket and not EOF or newline
     if (GET_TOKEN_CHECK_EOF(token) || TOKEN_TYPE_NEEDED_CHECK(token->type, TypeNewLine)) {DEBUG_PRINT("Reached EOF or Newline where it shouldn't be\n"); exit(1);}
 
     if(TOKEN_TYPE_NEEDED_CHECK(token->type, TypeLeftBracket)){
       //check if function with same name already exists
-      if(symtab_it_position((char*)token->data, table) == NULL){
+      if(symtab_it_position((char*)token->data, act_table) == NULL){
 
-        fction_name->type = TypeFunc;
-        symtab_add_it(table, fction_name); //add name of fction to table
+        fction_name.type = TypeFunc;
+        symtab_add_it(act_table, &fction_name); //add name of fction to act_table
 
         //for easier check of retrun value of params
-        int fction_return = fction_params(token, symtab_it_position((char *)fction_name->data, table));
+        int fction_return = fction_params(token, symtab_it_position((char *)fction_name.data, act_table));
 
         if(fction_return == 1){
           printf("\n!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! nastala chyba !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n\n\n");
@@ -397,7 +328,7 @@ int fction_start(Token *token, hSymtab *table){
             //generate???
             if (GET_TOKEN_CHECK_EOF(token)) {DEBUG_PRINT("Reached EOF where it shouldn't be\n"); exit(1);}
             //for easier check of return values form body of function
-            int fction_body_return = fction_body(token, symtab_it_position((char *)fction_name->data, table));
+            int fction_body_return = fction_body(token, symtab_it_position((char *)fction_name.data, act_table));
             //after return check dedent
             if (fction_body_return == 0){
               printf("return\n");

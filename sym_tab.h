@@ -59,3 +59,5 @@ void symtab_add_var_data(hSymtab_it *symtab_it, Type type);
 void symtab_add_predef_func(hSymtab *table);
 
 void free_symtab(hSymtab *table);
+
+int is_item_var_defined(char *desired, hSymtab *sym_tab);

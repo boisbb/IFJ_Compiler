@@ -132,11 +132,12 @@ int fction_params(Token *token, hSymtab_it *symtab_it){
   int check_comma = 0; //params should not end with comma
   bool malloc_check = false; //we want malloc only fist time
   hSymtab_Func_Param *params = NULL;
+  int param_counter = 0;
 
   while(!TOKEN_TYPE_NEEDED_CHECK(token->type, TypeRightBracket)){
 
     if(TOKEN_TYPE_NEEDED_CHECK(token->type, TypeVariable)){
-
+      param_counter++;
       check_comma = 0;
       if (malloc_check == false){
 
@@ -147,10 +148,12 @@ int fction_params(Token *token, hSymtab_it *symtab_it){
         params = ((hSymtab_Func *)(symtab_it->data))->params;
         ((hSymtab_Func *)(symtab_it->data))->params->param_type = TypeUnspecified;
 
-        if( !(((hSymtab_Func *)(symtab_it->data))->params->paramName = malloc(sizeof(char)*strlen((char*)token->data))) ){
+       if( !(((hSymtab_Func *)(symtab_it->data))->params->paramName = malloc(sizeof(char)*strlen((char*)token->data))) ){
           return 99; //malloc error
         }
         strcpy(params->paramName, (char*)token->data);
+
+        //sterv params->paramName = (char*)token->data;
         //no need to check name, it is first param
 
         malloc_check = true;
@@ -182,6 +185,9 @@ int fction_params(Token *token, hSymtab_it *symtab_it){
         }
 
         strcpy(params->next->paramName, (char*)token->data);
+
+
+        //sterv params->paramName = (char*)token->data;
         params = params->next;
       }
 
@@ -215,12 +221,10 @@ int fction_body(Token *token, hSymtab_it *symtab_it){
   symtab_init(local_table);
   symtab_add_predef_func(local_table);
 
-  //překopírovat parametry do lokální tabulky prvků
-
+  //to copy params to local_table
   hSymtab_Func_Param *params = NULL;
   params = ((hSymtab_Func *)(symtab_it->data))->params;
   Token param;
-
 
   while(params != NULL){
     param.data = params->paramName;
@@ -235,23 +239,6 @@ int fction_body(Token *token, hSymtab_it *symtab_it){
     indent_counter++;
     if (GET_TOKEN_CHECK_EOF(token)) {DEBUG_PRINT("Reached EOF where it shouldn't be\n"); exit(1);}
 
-/*
-    //rovnou je tam retrun
-    if(strcmp((char*)token->data, "return") == 0){
-      //tady budu kontrolovat, jestli něco vracím a pokud jo, tak vrátím číslo
-      //a budu vědět, že už mám další token načtený
-      //indent dedent check
-      if(indent_counter == dedent_counter){
-        return 0;
-      }
-      else{
-        return 1;
-      }
-
-    }
-    else{ //tady to bude jako body programu
-    */
-
     //NEFUNGUJE DEFINICE UVNITŘ FUNKCE
       while (strcmp((char*)token->data, "return") != 0) {
           if (err == NO_ERROR) {
@@ -265,23 +252,59 @@ int fction_body(Token *token, hSymtab_it *symtab_it){
             DEBUG_PRINT("Found EOF, parsing terminated.  %s\n", (char *)token->data);
             return err;
           }
-          if (GET_TOKEN_CHECK_EOF(token)) {DEBUG_PRINT("Found EOF, parsing terminated.\n"); return;}
+          //EOF in body of function
+          if (GET_TOKEN_CHECK_EOF(token)) {DEBUG_PRINT("Found EOF, parsing terminated.\n"); return 1;}
 
       }
       if(indent_counter == dedent_counter){
-        printf("\n\nLOCAL----------------------->\n");
-        print_sym_tab(local_table);
-        printf("<-------------------------END\n\n\n");
-        free_symtab(local_table);
-        free(local_table);
-        return 0;
+        //doplnit return type
+
+        //code ends with definition
+        if(GET_TOKEN_CHECK_EOF(token)) return 0;
+        //return value is variable or something
+
+        if(!TOKEN_TYPE_NEEDED_CHECK(token->type, TypeNewLine)){
+          //variable
+          if(TOKEN_TYPE_NEEDED_CHECK(token->type, TypeVariable)){
+            if(symtab_it_position((char*)token->data, local_table) == NULL){
+              return 1; //return variable is not in local_table of function
+            }
+            else{
+              printf("\n\nLOCAL----------------------->\n");
+              print_sym_tab(local_table);
+              printf("<-------------------------END\n\n\n");
+              //add return type
+              free_symtab(local_table);
+              return 0;
+            }
+          }
+          //something else, need fix for only possible return types
+          //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+          else{
+            printf("\n\nLOCAL----------------------->\n");
+            print_sym_tab(local_table);
+            printf("<-------------------------END\n\n\n");
+            //add return type
+            free_symtab(local_table);
+            return 0;
+          }
+        }
+        //no return value
+        else{
+          printf("\n\nLOCAL----------------------->\n");
+          print_sym_tab(local_table);
+          printf("<-------------------------END\n\n\n");
+          //add return type
+          free_symtab(local_table);
+          return 1000;
+        }
       }
       else{
-        //free_symtab(local_table);
+        free_symtab(local_table);
         return 1;
       }
 
-      return 0;
+      //return 0;
       //return 1;
     //}
 
@@ -298,6 +321,8 @@ int fction_start(Token *token, hSymtab *act_table){
   //beginning of function
   if(TOKEN_TYPE_NEEDED_CHECK(token->type, TypeVariable)){
     Token fction_name = *token;
+
+    //sterv bool generate_fnc_begin(char* label);
 
     //check if next token is left bracket and not EOF or newline
     if (GET_TOKEN_CHECK_EOF(token) || TOKEN_TYPE_NEEDED_CHECK(token->type, TypeNewLine)) {DEBUG_PRINT("Reached EOF or Newline where it shouldn't be\n"); exit(1);}
@@ -331,11 +356,25 @@ int fction_start(Token *token, hSymtab *act_table){
             //for easier check of return values form body of function
             int fction_body_return = fction_body(token, symtab_it_position((char *)fction_name.data, act_table));
             //after return check dedent
+            //function has return value
             if (fction_body_return == 0){
               printf("return\n");
               //newline
               if (GET_TOKEN_CHECK_EOF(token)) {DEBUG_PRINT("Reached EOF where it shouldn't be\n"); exit(1);}
 
+              //check dedent or eof
+              if(GET_TOKEN_CHECK_EOF(token) || TOKEN_TYPE_NEEDED_CHECK(token->type, TypeDedend)){
+                printf("je tady dedent, nebo eof\n");
+                return 0;
+              }
+              //po returnu není dedent
+              else{
+                printf("chyba kurva\n");
+                return 1;
+              }
+            }
+            //function does not have return value
+            else if(fction_body_return == 1000){
               //check dedent or eof
               if(GET_TOKEN_CHECK_EOF(token) || TOKEN_TYPE_NEEDED_CHECK(token->type, TypeDedend)){
                 printf("je tady dedent, nebo eof\n");

@@ -104,12 +104,19 @@ int expression_eval(int fction_switch){
     term_stack_init();
   }
   int token_index = 0;
+  int par_cnt = 1;
 
   while (1) {
 
     if (fction_switch == 1) {
-      if (act_tok.type == TypeComma) {
-        /* code */
+      if ((act_tok.type == TypeComma || act_tok.type == TypeRightBracket) && expr_stack.top->type == TypeLeftBracket) {
+        par_cnt--;
+        if (par_cnt == 0) {
+          return NO_ERROR;
+        }
+        else {
+          return ERROR_SYNTAX;
+        }
       }
     }
 
@@ -377,6 +384,7 @@ int realize_function_call(hSymtab_Func* func_data){
 
   // Push fction name
   s_push(&act_tok);
+  s_pop();
 
 
   if(get_next_token(&act_tok) == EOF) {
@@ -388,6 +396,8 @@ int realize_function_call(hSymtab_Func* func_data){
     DEBUG_PRINT("SYNTAX ERROR: Expected Left Parentheses.\n");
     return ERROR_SYNTAX;
   }
+
+  s_push(&act_tok);
 
 
   while(1) {
@@ -406,10 +416,21 @@ int realize_function_call(hSymtab_Func* func_data){
       // Also needed check for type of parametr
       // Pushing first parameter, decrementing param_cnt
 
-      if ((error = s_push(&act_tok)) != NO_ERROR) {
+      /*if ((error = s_push(&act_tok)) != NO_ERROR) {
         DEBUG_PRINT("Semantic error: variable %s does not exist.\n", (char*)act_tok.data);
         return error;
-      }
+      }*/
+
+
+      expression_eval(1);
+      DEBUG_PRINT("TOKEN: %s\n", operNames[act_tok.type]);
+      exit(1);
+
+
+
+
+
+
       param_cnt--;
 
       switch (expr_stack.top->type){

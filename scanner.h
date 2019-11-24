@@ -35,7 +35,8 @@ typedef enum
 
 	// Following tokens cant be returned from scanner
 	TypeUnspecified, // For adding variables into symtable
-	TypeFunc // For adding functions into symtable
+	TypeFunc, // For adding functions into symtable
+	TypeUndefined // If the function is not returning any value
 } Type;
 /////////////////////
 

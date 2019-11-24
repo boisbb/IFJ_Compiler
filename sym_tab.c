@@ -150,6 +150,7 @@ void symtab_add_predef_func(hSymtab *table){
   }
 
   ((hSymtab_Func*)((*table)[symtab_hash_function((char*)tok_fc.data)]->data))->params->param_type = TypeString;
+  ((hSymtab_Func*)((*table)[symtab_hash_function((char*)tok_fc.data)]->data))->return_type = TypeUndefined;
   free(tok_fc.data);
   //
 

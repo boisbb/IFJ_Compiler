@@ -27,10 +27,26 @@ bool generate_var_definition(char* label, bool scope, Type type, void* data);
 bool generate_push_data(Type type, void* data);
 // Push var to stack
 bool generate_push_var(char* label, bool scope);
+// Generate type control then push var to stack
+bool generate_push_var_unspecified(char* label, char* var_label, bool scope, Type type);
 // Do operation on stack
-bool generate_operation(Type type);
-// Pop result to var
+bool generate_operation(Type operation);
+// Call instead of generate_operation when both operands are TypeUnspecified
+bool generate_operation_unspecified(char* label, Type operation);
+// Concat two strings on stack
+bool generate_operation_concat();
+// Retype value on stack top from int to float
+bool generate_operation_retype_first_int2float();
+// Retype value on stack top from float to int
+bool generate_operation_retype_first_float2int();
+// Retype value second value on stack from int to float
+bool generate_operation_retype_sec_int2float();
+// Retype value second value on stack from float to int
+bool generate_operation_retype_sec_float2int();
+// Pops result to var
 bool generate_pop_var(char* label, bool scope);
+// Pops result for if and while condition
+bool generate_pop_exp();
 
 // If not true jumps on index
 bool generate_if_begin(char* label, unsigned index);
@@ -72,7 +88,7 @@ generate_fnc_param_get("s2", 1);
 generate_var_declaration("vys", 0);
 generate_push_var("s1", 0);
 generate_push_var("s2", 0);
-generate_operation(TypeOperatorPlus);
+generate_operation_unspecified("soucet$type_control", TypeOperatorPlus);
 generate_pop_var("vys", 0);
 generate_fnc_return_set_var("vys", 0);
 generate_fnc_end("soucet");

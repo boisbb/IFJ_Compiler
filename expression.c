@@ -165,7 +165,7 @@ int expression_eval(int fction_switch){
       // Popping from stack and generating code for operand/operator
       case '>':
         //DEBUG_PRINT("Popping: %s\n", operNames[expr_stack.top->type]);
-        if (ready_to_pop() == ERROR_SYNTAX)
+        if (ready_to_pop(fction_switch) == ERROR_SYNTAX)
           return ERROR_SYNTAX;
 
         break;
@@ -281,7 +281,7 @@ int id_s_pop(){
   free(id_stack.top->right);
 }
 
-int ready_to_pop(){
+int ready_to_pop(int fction_switch){
   switch (expr_stack.top->prec_tab_id) {
 
     case IDENTIFIER:
@@ -341,7 +341,7 @@ int ready_to_pop(){
       break;
 
     case OP_PLUSMINUS:
-      if(check_operators_and_operands_syntax(expr_stack.top->type) == ERROR_SYNTAX)
+      if(check_operators_and_operands_syntax(expr_stack.top->type, fction_switch) == ERROR_SYNTAX)
         return ERROR_SYNTAX;
 
       // GENERATE INSTRUCTION //
@@ -349,7 +349,7 @@ int ready_to_pop(){
       ///
       break;
     case OP_MULTDIV:
-      if(check_operators_and_operands_syntax(expr_stack.top->type) == ERROR_SYNTAX)
+      if(check_operators_and_operands_syntax(expr_stack.top->type, fction_switch) == ERROR_SYNTAX)
         return ERROR_SYNTAX;
 
       // GENERATE INSTRUCTION //
@@ -358,7 +358,7 @@ int ready_to_pop(){
       break;
 
     case OP_REL:
-      if(check_operators_and_operands_syntax(expr_stack.top->type) == ERROR_SYNTAX)
+      if(check_operators_and_operands_syntax(expr_stack.top->type, fction_switch) == ERROR_SYNTAX)
         return ERROR_SYNTAX;
 
       // GENERATE INSTRUCTION //
@@ -422,7 +422,7 @@ int realize_function_call(hSymtab_Func* func_data){
       }*/
 
 
-      expression_eval(1);
+      expression_eval(REALIZE_FUNC);
       DEBUG_PRINT("TOKEN: %s\n", operNames[act_tok.type]);
       exit(1);
 
@@ -475,7 +475,7 @@ int realize_function_call(hSymtab_Func* func_data){
 }
 
 // IMPLEMENTOVAT OPERATOR  '//'
-int check_operators_and_operands_syntax(Type operator){
+int check_operators_and_operands_syntax(Type operator, int fction_switch){
 
   if (!(id_stack.top->left)) {
     DEBUG_PRINT("SYNTAX ERROR: two operators.\n");

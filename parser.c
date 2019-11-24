@@ -135,7 +135,6 @@ int fction_params(Token *token, hSymtab_it *symtab_it){
   int param_counter = 0;
 
   while(!TOKEN_TYPE_NEEDED_CHECK(token->type, TypeRightBracket)){
-
     if(TOKEN_TYPE_NEEDED_CHECK(token->type, TypeVariable)){
       param_counter++;
       check_comma = 0;
@@ -147,6 +146,7 @@ int fction_params(Token *token, hSymtab_it *symtab_it){
 
         params = ((hSymtab_Func *)(symtab_it->data))->params;
         ((hSymtab_Func *)(symtab_it->data))->params->param_type = TypeUnspecified;
+        params->next = NULL;
 
        if( !(((hSymtab_Func *)(symtab_it->data))->params->paramName = malloc(sizeof(char)*strlen((char*)token->data))) ){
           return 99; //malloc error
@@ -162,45 +162,57 @@ int fction_params(Token *token, hSymtab_it *symtab_it){
       else {
         //for name check
         hSymtab_Func_Param *names = NULL;
-        names = ((hSymtab_Func *)(symtab_it->data))->params;
+        names = ((hSymtab_Func *)symtab_it->data)->params;
+        hSymtab_Func_Param *tmp = NULL;
 
         while(names != NULL){
-
           if(strcmp(names->paramName, (char*)token->data) == 0){
             //error two parameters with same name
             return 1;
           }
-          names = names->next;
+          if (!names->next) {
+            break;
+          }
+            names = names->next;
         }
+
+        printf("%s\n", (char*)token->data);
 
         if( !(params->next = malloc(sizeof(hSymtab_Func_Param))) ){
           return 99;
         }
 
         params->next->param_type = TypeUnspecified;
+        params->next->next = NULL;
 
 
         if( !(params->next->paramName = malloc(sizeof(char)*strlen((char*)token->data))) ){
           return 99;
         }
 
+
+
         strcpy(params->next->paramName, (char*)token->data);
 
 
         //sterv params->paramName = (char*)token->data;
         params = params->next;
+        params->next = NULL;
       }
 
     }
     else if(TOKEN_TYPE_NEEDED_CHECK(token->type, TypeComma)){
+      //printf("%d\n", token->type);
       check_comma = 1;
     }
     else{
       //param není variable nebo comma
       return 1;
     }
+    //printf("%d\n", token->type);
     //get next token
     if (GET_TOKEN_CHECK_EOF(token) || TOKEN_TYPE_NEEDED_CHECK(token->type, TypeNewLine)) {DEBUG_PRINT("Reached EOF or Newline where it shouldn't be\n"); exit(1);}
+    //printf("%d\n", token->type);
   }
   if (check_comma == 1){
     //add free
@@ -227,7 +239,10 @@ int fction_body(Token *token, hSymtab_it *symtab_it){
   Token param;
 
   while(params != NULL){
+      //printf("a\n");
+      //printf("%s\n", params->paramName);
     param.data = params->paramName;
+      printf("b\n");
     param.type = TypeVariable;
     symtab_add_it(local_table, &param);
     ((hSymtab_Var*)symtab_it_position((char*)param.data, local_table)->data)->defined = true;
@@ -270,6 +285,7 @@ int fction_body(Token *token, hSymtab_it *symtab_it){
               return 1; //return variable is not in local_table of function
             }
             else{
+
               printf("\n\nLOCAL----------------------->\n");
               print_sym_tab(local_table);
               printf("<-------------------------END\n\n\n");

@@ -24,7 +24,7 @@ void print_sym_tab(hSymtab *table){
           printf("%-25s -> FUNCTION DOESN'T HAVE ANY PARAMETERS\n", " ");
         else {
           for (int i = 0; paramets; i++){
-              printf("%-25s -> PARAMETER nr.%d --> TYPE: %-10s  NAME: %s\n", " ", i, operNames[paramets->param_type], paramets->paramName == NULL ? "NULL" : paramets->paramName);
+              printf("%-25s -> PARAMETER nr.%d --> TYPE: %-10d  NAME: %s\n", " ", i, paramets->param_type, paramets->paramName == NULL ? "NULL" : paramets->paramName);
               paramets = paramets->next;
           }
         }

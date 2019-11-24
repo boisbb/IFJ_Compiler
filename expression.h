@@ -3,6 +3,8 @@
 #include "error.h"
 #include "sym_tab.h"
 
+#define REALIZE_FUNC 1
+
 typedef struct st_tok_it {
   void *tok_cont;
   Type type;
@@ -36,7 +38,7 @@ int s_push();
 
 int s_pop();
 
-int ready_to_pop();
+int ready_to_pop(int fction_switch);
 
 int id_s_push(TermStackIt *term_item);
 
@@ -44,6 +46,6 @@ int id_stack_init();
 
 int id_s_pop();
 
-int check_operators_and_operands_syntax(Type operator);
+int check_operators_and_operands_syntax(Type operator, int fction_switch);
 
 int realize_function_call(hSymtab_Func* func_data);

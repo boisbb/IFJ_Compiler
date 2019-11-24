@@ -41,6 +41,23 @@ hSymtab_it *symtab_it_position(char *searched_for, hSymtab *sym_tab){
   return NULL;
 }
 
+int is_item_var_defined(char *desired, hSymtab *sym_tab){
+  if (!(symtab_it_position(desired, sym_tab))) {
+    DEBUG_PRINT("ERROR: variable %s does not existabc.\n", desired);
+    return ERROR_SEMANTIC;
+  }
+  else {
+    if ((symtab_it_position(desired, sym_tab)->item_type) == IT_VAR) {
+      if (((hSymtab_Var*)(symtab_it_position(desired, sym_tab)->data))->defined == false) {
+        DEBUG_PRINT("ERROR: variable %s does not exist.\n", desired);
+        return ERROR_SEMANTIC;
+      }
+    }
+  }
+
+  return NO_ERROR;
+}
+
 int symtab_it_get_type(hSymtab_it *symtab_it){
   /*if (symtab_it->data->type == TypeInt) {
     return TypeInt;
@@ -77,7 +94,6 @@ void symtab_add_it(hSymtab *sym_tab, Token *token){
     tmp->next = NULL;
     strcpy(tmp->hKey, (char*)token->data);
   }
-
   switch(token->type) {
 
     case TypeVariable:

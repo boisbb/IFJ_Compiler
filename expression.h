@@ -28,9 +28,9 @@ typedef struct st_id {
 
 int term_stack_init();
 
-int expression(Token *act_tok, hSymtab_it *p_variable);
+int expression(Token *act_tok, hSymtab_it *p_variable, hSymtab *actual_table);
 
-int expression_eval();
+int expression_eval(int fction_switch);
 
 int s_push();
 

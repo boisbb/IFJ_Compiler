@@ -4,7 +4,7 @@
 #include "expression.h"
 #define P_SIZE 9
 
-hSymtab *table;
+hSymtab *s_table;
 TermStack expr_stack;
 IdStack id_stack;
 hSymtab_it *variable;
@@ -84,10 +84,11 @@ PRECED_TABLE_ITEM convert_token_type_to_prec_type(Token *token){
 }
 
 // Processes the token
-int expression(Token *act_token, hSymtab_it *p_variable){
+int expression(Token *act_token, hSymtab_it *p_variable, hSymtab *actual_table){
   variable = p_variable;
   act_tok = *act_token;
-  error = expression_eval();
+  s_table = actual_table;
+  error = expression_eval(0);
 
   free(expr_stack.top);
   free(id_stack.top);
@@ -98,11 +99,19 @@ int expression(Token *act_token, hSymtab_it *p_variable){
 }
 
 
-int expression_eval(){
-  term_stack_init();
+int expression_eval(int fction_switch){
+  if (fction_switch == 0) {
+    term_stack_init();
+  }
   int token_index = 0;
 
   while (1) {
+
+    if (fction_switch == 1) {
+      if (act_tok.type == TypeComma) {
+        /* code */
+      }
+    }
 
     token_index = convert_token_type_to_prec_type(&act_tok);
 
@@ -125,10 +134,13 @@ int expression_eval(){
         //DEBUG_PRINT("Pushing: %s\n", operNames[act_tok.type]);
 
         if (act_tok.type == TypeVariable) {
-          hSymtab_it *tmp_sym_it = symtab_it_position((char*)act_tok.data, table);
+          hSymtab_it *tmp_sym_it = symtab_it_position((char*)act_tok.data, s_table);
           if (tmp_sym_it) {
             if (tmp_sym_it->item_type == IT_FUNC) {
               error = realize_function_call((hSymtab_Func*)tmp_sym_it->data);
+              if (error != NO_ERROR) {
+                return error;
+              }
             }
           }
         }
@@ -181,9 +193,8 @@ int term_stack_init(){
 int s_push(){
 
   if (act_tok.type == TypeVariable){
-    if (!(symtab_it_position((char*)act_tok.data, table)) || ((hSymtab_Var*)(symtab_it_position((char*)act_tok.data, table)->data))->defined == false) {
-      DEBUG_PRINT("ERROR: variable %s does not exist.\n", (char*)act_tok.data);
-      return ERROR_SEMANTIC;
+    if ((error = is_item_var_defined((char*)act_tok.data, s_table)) != NO_ERROR) {
+      return error;
     }
   }
                                                               /// REDUNDANT ALLOCATION //
@@ -227,7 +238,7 @@ int id_s_push(TermStackIt *term_item){
   Type type;
 
   if (term_item->type == TypeVariable){
-    type = ((hSymtab_Var*)(symtab_it_position((char*)term_item->tok_cont, table)->data))->type;
+    type = ((hSymtab_Var*)(symtab_it_position((char*)term_item->tok_cont, s_table)->data))->type;
   }
   else {
     type = term_item->type;
@@ -274,12 +285,12 @@ int ready_to_pop(){
 
       switch (expr_stack.top->type) {
         case TypeVariable:
-          if (!(symtab_it_position((char*)expr_stack.top->tok_cont, table))) {
+          if (!(symtab_it_position((char*)expr_stack.top->tok_cont, s_table))) {
             DEBUG_PRINT("ERROR: variable %s does not exist.\n", (char*)expr_stack.top->tok_cont);
             return ERROR_SEMANTIC;
           }
           else {
-            if (symtab_it_position((char*)expr_stack.top->tok_cont, table)->item_type == IT_VAR){
+            if (symtab_it_position((char*)expr_stack.top->tok_cont, s_table)->item_type == IT_VAR){
               id_s_push(expr_stack.top);
 
               // Maybe change //
@@ -363,8 +374,10 @@ int realize_function_call(hSymtab_Func* func_data){
   int param_cnt = symtab_num_of_fction_params(func_data);
   hSymtab_Func_Param *act_parameters = func_data->params;
 
+
   // Push fction name
   s_push(&act_tok);
+
 
   if(get_next_token(&act_tok) == EOF) {
     DEBUG_PRINT("Parsing ended: found EOF.\n");
@@ -376,54 +389,66 @@ int realize_function_call(hSymtab_Func* func_data){
     return ERROR_SYNTAX;
   }
 
-  if(get_next_token(&act_tok) == EOF) {
-    DEBUG_PRINT("Found EOF.\n");
-    return EOF;
-  }
-
-  if (convert_token_type_to_prec_type(&act_tok) != IDENTIFIER && act_tok.type != TypeRightBracket) {
-    DEBUG_PRINT("SYNTAX ERROR: Expected function parameter or right Parentheses.\n");
-    return ERROR_SYNTAX;
-  }
-  else if (act_tok.type == TypeRightBracket && param_cnt != 0) {
-    DEBUG_PRINT("SYNTAX ERROR: Function did not recieve needed parameters.\n");
-    return ERROR_SYNTAX;
-  }
-
-
-  // Pushing first parameter, decrementing param_cnt
-  s_push(&act_tok);
-  param_cnt--;
-
 
   while(1) {
-    if (act_parameters) {
-      if(get_next_token(&act_tok) == EOF) {
-        DEBUG_PRINT("Found EOF.\n");
-        return EOF;
-      }
-
-      if (convert_token_type_to_prec_type(&act_tok) != IDENTIFIER && act_tok.type != TypeRightBracket) {
-        DEBUG_PRINT("SYNTAX ERROR: Expected function parameter or right Parentheses.\n");
-        return ERROR_SYNTAX;
-      }
-      else if (convert_token_type_to_prec_type(&act_tok) != IDENTIFIER && param_cnt != 0){
-
-        // Also needed check for type of parametr
-
-        // Pushing first parameter, decrementing param_cnt
-        s_push(&act_tok);
-        param_cnt--;
-      }
-      else if (act_tok.type == TypeRightBracket && param_cnt != 0) {
-        DEBUG_PRINT("SYNTAX ERROR: Function did not recieve needed parameters.\n");
-        return ERROR_SYNTAX;
-      }
-      else if(act_tok.type == TypeRightBracket && param_cnt == 0){
-        break;
-      }
-
+    if(get_next_token(&act_tok) == EOF) {
+      DEBUG_PRINT("Found EOF.\n");
+      return EOF;
     }
+
+
+    if (convert_token_type_to_prec_type(&act_tok) != IDENTIFIER && act_tok.type != TypeRightBracket) {
+      DEBUG_PRINT("SYNTAX ERROR: Expected function parameter or right Parentheses.\n");
+      return ERROR_SYNTAX;
+    }
+    else if (convert_token_type_to_prec_type(&act_tok) == IDENTIFIER && param_cnt != 0){
+
+      // Also needed check for type of parametr
+      // Pushing first parameter, decrementing param_cnt
+
+      if ((error = s_push(&act_tok)) != NO_ERROR) {
+        DEBUG_PRINT("Semantic error: variable %s does not exist.\n", (char*)act_tok.data);
+        return error;
+      }
+      param_cnt--;
+
+      switch (expr_stack.top->type){
+        case TypeVariable:
+          // No need to check if variable is defined or not, the check is done in s_push
+          if (symtab_it_position((char*)expr_stack.top->tok_cont, s_table)->item_type == IT_VAR) {
+            expr_stack.top->type = ((hSymtab_Var*)symtab_it_position((char*)expr_stack.top->tok_cont, s_table)->data)->type;
+          }
+        default:
+          break;
+
+      }
+
+      if (expr_stack.top->type != TypeUnspecified && act_parameters->param_type != TypeUnspecified) {
+        if (expr_stack.top->type != act_parameters->param_type) {
+          DEBUG_PRINT("Syntax error: incorrect parameter type in variable: %s\n", (char*)expr_stack.top->tok_cont);
+          return ERROR_SYNTAX;
+        }
+      }
+
+      DEBUG_PRINT("Top of stack: %s %s | param_cnt: %d \n", (char*)expr_stack.top->tok_cont, operNames[expr_stack.top->type], param_cnt);
+      exit(1);
+    }
+    else if (convert_token_type_to_prec_type(&act_tok) == IDENTIFIER && param_cnt == 0){
+      DEBUG_PRINT("SYNTAX ERROR: Function recieved to many parameters.\n");
+      return ERROR_SEMANTIC;
+    }
+    else if (act_tok.type == TypeRightBracket && param_cnt != 0) {
+      DEBUG_PRINT("SYNTAX ERROR: Function did not recieve needed parameters.\n");
+      return ERROR_SEMANTIC;
+    }
+    else if(act_tok.type == TypeRightBracket && param_cnt == 0){
+      break;
+    }
+    else {
+      DEBUG_PRINT("SYNTAX ERROR: Function did not recieve comma, parentheses or parameter.\n");
+      return ERROR_SEMANTIC;
+    }
+
   }
 
 }

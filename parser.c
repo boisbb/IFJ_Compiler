@@ -75,22 +75,22 @@ void assignment(Token *var, Token *value, hSymtab *act_table){
 int command(Token *token, hSymtab *act_table, int in_function){
 
   if (TOKEN_TYPE_NEEDED_CHECK(token->type, TypeVariable)) {
-    Token *token_n = malloc(sizeof(Token));
+    Token token_n;
 
-    if (GET_TOKEN_CHECK_EOF(token_n)) {DEBUG_PRINT("Reached EOF where it shouldn't be\n"); exit(1);}
+    if (GET_TOKEN_CHECK_EOF(&token_n)) {DEBUG_PRINT("Reached EOF where it shouldn't be\n"); exit(1);}
 
 
 
-    if (TOKEN_TYPE_NEEDED_CHECK(token_n->type, TypeAssignment)) {
+    if (TOKEN_TYPE_NEEDED_CHECK(token_n.type, TypeAssignment)) {
 
-      assignment(token, token_n, act_table);
-      free(token_n);
+      assignment(token, &token_n, act_table);
       return err;
 
 
     }
   }
   else if (strcmp((char*)token->data, "def") == 0) {
+    free(token->data);//po tomhle ifu useless
     if (fction_start(token, act_table) == 0){
       printf("jsem zpátky v body/command\n\n\n");
     }
@@ -152,11 +152,12 @@ int fction_params(Token *token, hSymtab_it *symtab_it){
         params = ((hSymtab_Func *)(symtab_it->data))->params;
         ((hSymtab_Func *)(symtab_it->data))->params->param_type = TypeUnspecified;
         params->next = NULL;
-
+/*
        if( !(((hSymtab_Func *)(symtab_it->data))->params->paramName = malloc(sizeof(char)*strlen((char*)token->data))) ){
           return 99; //malloc error
         }
-        strcpy(params->paramName, (char*)token->data);
+        strcpy(params->paramName, (char*)token->data);*/
+        params->paramName = (char*)token->data;
 
         //sterv params->paramName = (char*)token->data;
         //no need to check name, it is first param
@@ -190,7 +191,7 @@ int fction_params(Token *token, hSymtab_it *symtab_it){
         params->next->param_type = TypeUnspecified;
         params->next->next = NULL;
 
-
+/*
         if( !(params->next->paramName = malloc(sizeof(char)*strlen((char*)token->data))) ){
           return 99;
         }
@@ -198,12 +199,13 @@ int fction_params(Token *token, hSymtab_it *symtab_it){
 
 
         strcpy(params->next->paramName, (char*)token->data);
-
+*/
         /* sterv bool generate_fnc_param_get(char* label, unsigned index); -> param_counter
         label je nazev parametru, a index je cislo parametru
         nazev by mel byt (char*)token->data*/
 
         //sterv params->paramName = (char*)token->data;
+        params->next->paramName = (char*)token->data;
         params = params->next;
         params->next = NULL;
       }
@@ -236,10 +238,9 @@ int fction_params(Token *token, hSymtab_it *symtab_it){
 int fction_body(Token *token, hSymtab_it *symtab_it){
   int indent_counter = 0, dedent_counter = 1; //last dedent is checked after this function
 
-  hSymtab *local_table;
-  local_table = malloc(sizeof(hSymtab));
-  symtab_init(local_table);
-  symtab_add_predef_func(local_table);
+  hSymtab local_table;
+  symtab_init(&local_table);
+  symtab_add_predef_func(&local_table);
 
 
   //to copy params to local_table
@@ -253,8 +254,8 @@ int fction_body(Token *token, hSymtab_it *symtab_it){
     param.data = params->paramName;
       printf("b\n");
     param.type = TypeVariable;
-    symtab_add_it(local_table, &param);
-    ((hSymtab_Var*)symtab_it_position((char*)param.data, local_table)->data)->defined = true;
+    symtab_add_it(&local_table, &param);
+    ((hSymtab_Var*)symtab_it_position((char*)param.data, &local_table)->data)->defined = true;
     params = params->next;
   }
 
@@ -265,7 +266,7 @@ int fction_body(Token *token, hSymtab_it *symtab_it){
 
       while (strcmp((char*)token->data, "return") != 0) {
           if (err == NO_ERROR) {
-            command(token, local_table, 1);
+            command(token, &local_table, 1);
             if (err == ERROR_SYNTAX || err == ERROR_SEMANTIC) {
               DEBUG_PRINT("Error occured, parsing ended.\n");
               return err;
@@ -279,6 +280,7 @@ int fction_body(Token *token, hSymtab_it *symtab_it){
           if (GET_TOKEN_CHECK_EOF(token)) {DEBUG_PRINT("Found EOF, parsing terminated.\n"); return 1;}
 
       }
+      free(token->data);//smaze "return"
       if(indent_counter == dedent_counter){
         //doplnit return type
 
@@ -289,16 +291,17 @@ int fction_body(Token *token, hSymtab_it *symtab_it){
         if(!TOKEN_TYPE_NEEDED_CHECK(token->type, TypeNewLine)){
           //variable
           if(TOKEN_TYPE_NEEDED_CHECK(token->type, TypeVariable)){
-            if(symtab_it_position((char*)token->data, local_table) == NULL){
+            if(symtab_it_position((char*)token->data, &local_table) == NULL){
               return 1; //return variable is not in local_table of function
             }
             else{
 
               printf("\n\nLOCAL----------------------->\n");
-              print_sym_tab(local_table);
+              print_sym_tab(&local_table);
               printf("<-------------------------END\n\n\n");
               //add return type
-              free_symtab(local_table);
+              free(token->data);//po zjisteni varu nazev smaze
+              free_symtab(&local_table);
               return 0;
             }
           }
@@ -306,25 +309,26 @@ int fction_body(Token *token, hSymtab_it *symtab_it){
           //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
           else{
             printf("\n\nLOCAL----------------------->\n");
-            print_sym_tab(local_table);
+            print_sym_tab(&local_table);
             printf("<-------------------------END\n\n\n");
             //add return type
-            free_symtab(local_table);
+            free(token->data);//po zjisteni varu nazev smaze
+            free_symtab(&local_table);
             return 0;
           }
         }
         //no return value
         else{
           printf("\n\nLOCAL----------------------->\n");
-          print_sym_tab(local_table);
+          print_sym_tab(&local_table);
           printf("<-------------------------END\n\n\n");
           //add return type
-          free_symtab(local_table);
+          free_symtab(&local_table);
           return 1000;
         }
       }
       else{
-        free_symtab(local_table);
+        free_symtab(&local_table);
         return 1;
       }
 
@@ -384,6 +388,7 @@ int fction_start(Token *token, hSymtab *act_table){
             int fction_body_return = fction_body(token, symtab_it_position((char *)fction_name.data, act_table));
             //after return check dedent
             //function has return value
+            free(fction_name.data);//dal uz nebude potreba
 
             //sterv generate_fnc_end(char* label)
 
@@ -452,10 +457,10 @@ int fction_start(Token *token, hSymtab *act_table){
 // <prog> -> <body>
 // <prog> -> <fction_start> INDENT <body> DEDENT <body>
 int prog() {
-  Token *token = malloc(sizeof(Token));
+  Token token;
   scanner_init();
 
-  if(GET_TOKEN_CHECK_EOF(token)){
+  if(GET_TOKEN_CHECK_EOF(&token)){
     DEBUG_PRINT("Test file is empty.\n");
     return 1;
   }
@@ -464,22 +469,9 @@ int prog() {
   symtab_init(table);
   symtab_add_predef_func(table);
 
-  //function definition
-  //maybe not useful, and can be done form body()
-  if (strcmp((char*)token->data, "def") == 0) {
-    if (fction_start(token, table) == 0){
-      printf("jsem zpátky v prog\n\n\n");
-    }
-    else return 1;
-    //only definition
-    if (GET_TOKEN_CHECK_EOF(token)) {DEBUG_PRINT("Reached EOF after function definition\n"); return 0;}//exit(1);}
+  //proc to bylo driv tak slozite?
+  body(&token, table);
 
-    body(token, table);
-    return 0;
-  }
-  else {
-    body(token, table);
-  }
 /*
   free_symtab(table);
   free(table);

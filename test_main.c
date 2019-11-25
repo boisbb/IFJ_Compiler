@@ -40,4 +40,5 @@ int main() {
   DEBUG_PRINT("_____PARSING ENDED_____\n");
   free_symtab(table);
   free(table);
+  scanner_free();
 }

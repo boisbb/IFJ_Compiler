@@ -12,6 +12,8 @@ Token act_tok;
 int error;
 int id_stack_cnt = 0;
 
+Type param_type_r;
+
 
 const char *operNames[];
 
@@ -301,8 +303,14 @@ int ready_to_pop(int fction_switch){
               id_s_push(expr_stack.top);
 
               // Maybe change //
-              if (variable)
-                ((hSymtab_Var*)variable->data)->type = id_stack.top->type;
+              if (variable) {
+                if (variable->item_type == IT_VAR){
+                  ((hSymtab_Var*)variable->data)->type = id_stack.top->type;
+                }
+                else if (variable->item_type == IT_FUNC){
+                  ((hSymtab_Func*)variable->data)->return_type = id_stack.top->type;
+                }
+              }
 
               printf("\t \tSENT TO GENERATOR: %s\n", (char*)expr_stack.top->tok_cont);
 
@@ -330,8 +338,14 @@ int ready_to_pop(int fction_switch){
           id_s_push(expr_stack.top);
 
           // Maybe change //
-          if (variable)
-            ((hSymtab_Var*)variable->data)->type = id_stack.top->type;
+          if (variable) {
+            if (variable->item_type == IT_VAR){
+              ((hSymtab_Var*)variable->data)->type = id_stack.top->type;
+            }
+            else if (variable->item_type == IT_FUNC){
+              ((hSymtab_Func*)variable->data)->return_type = id_stack.top->type;
+            }
+          }
 
           break;
 
@@ -424,14 +438,18 @@ int realize_function_call(hSymtab_Func* func_data){
 
       expression_eval(REALIZE_FUNC);
       DEBUG_PRINT("TOKEN: %s\n", operNames[act_tok.type]);
+      param_cnt--;
+
+      if (act_tok.type == TypeRightBracket) {
+        if (param_cnt == 0) {
+          DEBUG_PRINT("It works, who woulda thought.\n");
+          exit(1);
+          return NO_ERROR;
+        }
+      }
+
       exit(1);
 
-
-
-
-
-
-      param_cnt--;
 
       switch (expr_stack.top->type){
         case TypeVariable:
@@ -504,12 +522,28 @@ int check_operators_and_operands_syntax(Type operator, int fction_switch){
     }
     else {
       result = TypeInt;
-      symtab_add_var_data(variable, TypeInt);
+
+      if (variable) {
+        if (variable->item_type == IT_VAR){
+          symtab_add_var_data(variable, TypeInt);
+        }
+        else if (variable->item_type == IT_FUNC){
+          ((hSymtab_Func*)variable->data)->return_type = TypeInt;
+        }
+      }
     }
   }
   else if(l_operand.type == TypeInt && r_operand.type == TypeInt && operator == TypeOperatorDiv){
     result = TypeFloat;
-    symtab_add_var_data(variable, TypeFloat);
+    if (fction_switch != 1)
+    if (variable) {
+      if (variable->item_type == IT_VAR){
+        symtab_add_var_data(variable, TypeFloat);
+      }
+      else if (variable->item_type == IT_FUNC){
+        ((hSymtab_Func*)variable->data)->return_type = TypeFloat;
+      }
+    }
   } // When both operands are either Float or INT or any combination, there is no need to check syntax
   else if ((l_operand.type == TypeFloat && r_operand.type == TypeInt) || (l_operand.type == TypeInt && r_operand.type == TypeFloat) ||
             (l_operand.type == TypeFloat && r_operand.type == TypeFloat)){
@@ -527,7 +561,17 @@ int check_operators_and_operands_syntax(Type operator, int fction_switch){
     }
     else {
       result = TypeFloat;
-      symtab_add_var_data(variable, TypeFloat);
+      if (fction_switch != 1) {
+        if (variable) {
+          if (variable->item_type == IT_VAR){
+            symtab_add_var_data(variable, TypeFloat);
+          }
+          else if (variable->item_type == IT_FUNC){
+            ((hSymtab_Func*)variable->data)->return_type = TypeFloat;
+          }
+        }
+
+      }
     }
   }
   else if (l_operand.type == TypeString && r_operand.type == TypeString){
@@ -536,12 +580,29 @@ int check_operators_and_operands_syntax(Type operator, int fction_switch){
       return ERROR_SYNTAX;
     }
     result = TypeString;
-    symtab_add_var_data(variable, TypeString);
+    if (fction_switch != 1)
+    if (variable) {
+      if (variable->item_type == IT_VAR){
+        symtab_add_var_data(variable, TypeString);
+      }
+      else if (variable->item_type == IT_FUNC){
+        ((hSymtab_Func*)variable->data)->return_type = TypeString;
+      }
+    }
   } // If for TypeUnspecified that comes out of function PARAMETERS
   else if (((l_operand.type == TypeUnspecified) && (r_operand.type == TypeUnspecified || r_operand.type == TypeInt ||
     r_operand.type == TypeFloat || r_operand.type == TypeString)) || ((r_operand.type == TypeUnspecified || r_operand.type == TypeInt ||
     r_operand.type == TypeFloat || r_operand.type == TypeString) && (r_operand.type == TypeUnspecified))) {
-    symtab_add_var_data(variable, TypeUnspecified);
+    if (fction_switch != 1)
+
+      if (variable) {
+        if (variable->item_type == IT_VAR){
+          symtab_add_var_data(variable, TypeUnspecified);
+        }
+        else if (variable->item_type == IT_FUNC){
+          ((hSymtab_Func*)variable->data)->return_type = TypeUnspecified;
+        }
+      }
   }
   else {
     DEBUG_PRINT("SYNTAX ERROR: Incorrect operator or operand.\n");

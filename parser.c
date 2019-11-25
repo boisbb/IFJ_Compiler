@@ -146,7 +146,7 @@ int fction_params(Token *token, hSymtab_it *symtab_it){
       if (malloc_check == false){
 
         if( !(((hSymtab_Func *)(symtab_it->data))->params = malloc(sizeof(hSymtab_Func_Param))) ){
-          return 99; //malloc error
+          return ERROR_INTERNAL; //malloc error
         }
 
         params = ((hSymtab_Func *)(symtab_it->data))->params;
@@ -182,7 +182,7 @@ int fction_params(Token *token, hSymtab_it *symtab_it){
             names = names->next;
         }
 
-        printf("%s\n", (char*)token->data);
+        //printf("%s\n", (char*)token->data);
 
         if( !(params->next = malloc(sizeof(hSymtab_Func_Param))) ){
           return 99;
@@ -227,7 +227,7 @@ int fction_params(Token *token, hSymtab_it *symtab_it){
   if (check_comma == 1){
     //add free
     //parametry končí čárkou
-    return 1;
+    return ERROR_SYNTAX;
   }
   else{
     //parametry vypadají v pořádku
@@ -252,7 +252,7 @@ int fction_body(Token *token, hSymtab_it *symtab_it){
       //printf("a\n");
       //printf("%s\n", params->paramName);
     param.data = params->paramName;
-      printf("b\n");
+      //printf("b\n");
     param.type = TypeVariable;
     symtab_add_it(&local_table, &param);
     ((hSymtab_Var*)symtab_it_position((char*)param.data, &local_table)->data)->defined = true;
@@ -313,7 +313,7 @@ int fction_body(Token *token, hSymtab_it *symtab_it){
             printf("<-------------------------END\n\n\n");
             //add return type
             free(token->data);//po zjisteni varu nazev smaze
-            free_symtab(&local_table);
+            free_symtab(&local_table); //todo boris
             return 0;
           }
         }
@@ -368,7 +368,7 @@ int fction_start(Token *token, hSymtab *act_table){
         //for easier check of retrun value of params
         int fction_return = fction_params(token, symtab_it_position((char *)fction_name.data, act_table));
 
-        if(fction_return == 1){
+        if(fction_return == ERROR_SYNTAX){
           printf("\n!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! nastala chyba !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n\n\n");
           return 1;
         }

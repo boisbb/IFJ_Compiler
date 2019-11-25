@@ -249,10 +249,7 @@ int fction_body(Token *token, hSymtab_it *symtab_it){
   Token param;
 
   while(params != NULL){
-      //printf("a\n");
-      //printf("%s\n", params->paramName);
     param.data = params->paramName;
-      //printf("b\n");
     param.type = TypeVariable;
     symtab_add_it(&local_table, &param);
     ((hSymtab_Var*)symtab_it_position((char*)param.data, &local_table)->data)->defined = true;
@@ -300,9 +297,10 @@ int fction_body(Token *token, hSymtab_it *symtab_it){
               print_sym_tab(&local_table);
               printf("<-------------------------END\n\n\n");
               //add return type
+              err = expression(token, symtab_it, local_table);
               free(token->data);//po zjisteni varu nazev smaze
               free_symtab(&local_table);
-              return 0;
+              return 1000;
             }
           }
           //something else, need fix for only possible return types
@@ -312,9 +310,10 @@ int fction_body(Token *token, hSymtab_it *symtab_it){
             print_sym_tab(&local_table);
             printf("<-------------------------END\n\n\n");
             //add return type
+            err = expression(token, symtab_it, local_table);
             free(token->data);//po zjisteni varu nazev smaze
-            free_symtab(&local_table); //todo boris
-            return 0;
+            free_symtab(&local_table);
+            return 1000;
           }
         }
         //no return value

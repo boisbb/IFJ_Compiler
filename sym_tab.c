@@ -109,7 +109,7 @@ void symtab_add_it(hSymtab *sym_tab, Token *token){
       (*sym_tab)[hash]->item_type = IT_FUNC;
       ((hSymtab_Func*)((*sym_tab)[hash]->data))->defined = false;
       ((hSymtab_Func*)((*sym_tab)[hash]->data))->params = NULL;
-      ((hSymtab_Func*)((*sym_tab)[hash]->data))->return_type = TypeUnspecified;
+      ((hSymtab_Func*)((*sym_tab)[hash]->data))->return_type = TypeUndefined;
       break;
 
     default:

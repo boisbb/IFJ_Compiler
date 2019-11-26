@@ -1,7 +1,5 @@
 #include "parser.h"
 
-#define RETURN_STH 1000
-
 #define GET_TOKEN_CHECK_EOF(token) \
             (get_next_token(token) == EOF) ? 1 : 0 \
 
@@ -45,45 +43,6 @@
 int err = 0;
 extern hSymtab *table;
 const char *operNames[];
-
-int statement(Token *token, hSymtab *act_table){
-  if (!strcmp((char*)token->data, "if")){
-    printf("\t \tSENT TO GENERATOR: %s\n", (char*)token->data);
-  }
-  else if(!strcmp((char*)token->data, "while")) {
-    printf("\t \tSENT TO GENERATOR: %s\n", (char*)token->data);
-  }
-
-  if (GET_TOKEN_CHECK_EOF(token)) {DEBUG_PRINT("Reached EOF or Newline where it shouldn't be\n"); exit(1);}
-
-  if (TOKEN_TYPE_NEEDED_CHECK(token, TypeInt) || TOKEN_TYPE_NEEDED_CHECK(token, TypeFloat) || TOKEN_TYPE_NEEDED_CHECK(token, TypeString) ||
-      TOKEN_TYPE_NEEDED_CHECK(token, TypeVariable)) {
-    err = expression(token, NULL, act_table);
-
-    if (!TOKEN_TYPE_NEEDED_CHECK(token, TypeColon)) {
-      DEBUG_PRINT("Syntax error: Colon is missing\n");
-      return ERROR_SYNTAX;
-    }
-
-    // TODO
-
-  }
-  else if (!strcmp((char*)token->data, "None")){
-
-  }
-
-}
-
-
-int fction_call(Token *token, hSymtab *act_table){
-  hSymtab_it *tmp_fct = NULL;
-  if ((tmp_fct = symtab_it_position((char*)token->data, act_table))){
-    if (tmp_fct->item_type == IT_FUNC) {
-
-    }
-  }
-}
-
 
 
 // Basic without expressions yet // add code generating
@@ -320,38 +279,20 @@ int command(Token *token, hSymtab *act_table, int in_function, int statement_swi
     return err;
   }
   else if (strcmp((char*)token->data, "def") == 0 && statement_switch == 0) {
-    /* --> tak jsem to měl já
-    else if (strcmp((char*)token->data, "def") == 0) {
-      if(in_function == 1){
-        printf("ŠPATNĚ ŠPATNĚ ŠPATNE\n");
-        return ERROR_SYNTAX;
-    */
     free(token->data);//po tomhle ifu useless
     if (fction_start(token, act_table) == 0){
       printf("jsem zpátky v body/command\n\n\n");
     }
     else{
-      free(token->data);//po tomhle ifu useless
-      int fction_start_return = fction_start(token, act_table);
-      if (fction_start_return == NO_ERROR){
-        printf("jsem zpátky v body/command\n\n\n");
-      }
-      else if(fction_start_return == ERROR_SYNTAX){
-        printf("chyba syntax\n");
-      }
-      else if(fction_start_return == ERROR_SEMANTIC){
-        printf("chyba semantika\n");
-      }
-      else{
-        printf("je to v piči\n");
-      }
-    /*if (in_function == 1){
+      printf("chyba\n");
+    }
+    //tady upravit aby prošlo, když vstupní kód končí definicí
+    if (in_function == 1){
       return;
     }
-    else{*/
+    else{
       if (GET_TOKEN_CHECK_EOF(token)){DEBUG_PRINT("Reached EOF after function definition\n"); return 0;}//exit(1);}
       body(token, act_table);
-    //}
     }
 
   } // Pridat None a Pass
@@ -433,7 +374,7 @@ int fction_params(Token *token, hSymtab_it *symtab_it){
         while(names != NULL){
           if(strcmp(names->paramName, (char*)token->data) == 0){
             //error two parameters with same name
-            return ERROR_SEMANTIC;
+            return 1;
           }
           if (!names->next) {
             break;
@@ -444,7 +385,7 @@ int fction_params(Token *token, hSymtab_it *symtab_it){
         //printf("%s\n", (char*)token->data);
 
         if( !(params->next = malloc(sizeof(hSymtab_Func_Param))) ){
-          return ERROR_INTERNAL;
+          return 99;
         }
 
         params->next->param_type = TypeUnspecified;
@@ -476,7 +417,7 @@ int fction_params(Token *token, hSymtab_it *symtab_it){
     }
     else{
       //param není variable nebo comma
-      return ERROR_SYNTAX;
+      return 1;
     }
     //printf("%d\n", token->type);
     //get next token
@@ -490,7 +431,7 @@ int fction_params(Token *token, hSymtab_it *symtab_it){
   }
   else{
     //parametry vypadají v pořádku
-    return NO_ERROR;
+    return 0;
   }
 }
 
@@ -524,14 +465,6 @@ int fction_body(Token *token, hSymtab_it *symtab_it){
 
       while (strcmp((char*)token->data, "return") != 0) {
           if (err == NO_ERROR) {
-            /* moje staré
-            if (command(token, &local_table, 1) == ERROR_SYNTAX){
-              printf("hovno hovno\n");
-              free(token->data);//po zjisteni varu nazev smaze
-              free_symtab(&local_table);
-              return ERROR_SYNTAX;
-            }
-            else if (err == ERROR_SYNTAX || err == ERROR_SEMANTIC) {*/
             command(token, &local_table, 1, 0);
             if (err == ERROR_SYNTAX || err == ERROR_SEMANTIC) {
               DEBUG_PRINT("Error occured, parsing ended.\n");
@@ -548,13 +481,12 @@ int fction_body(Token *token, hSymtab_it *symtab_it){
       }
       free(token->data);//smaze "return"
       if(indent_counter == dedent_counter){
+        //doplnit return type
 
         //code ends with definition
-        //dead code???? looks like it ends up in else line 321
-        if(GET_TOKEN_CHECK_EOF(token)){
-          return 0;
-        }
+        if(GET_TOKEN_CHECK_EOF(token)) return 0;
         //return value is variable or something
+
         if(!TOKEN_TYPE_NEEDED_CHECK(token->type, TypeNewLine)){
           //variable
           if(TOKEN_TYPE_NEEDED_CHECK(token->type, TypeVariable)){
@@ -567,10 +499,10 @@ int fction_body(Token *token, hSymtab_it *symtab_it){
               print_sym_tab(&local_table);
               printf("<-------------------------END\n\n\n");
               //add return type
-              err = expression(token, symtab_it, &local_table);
+              err = expression(NULL, token, symtab_it, &local_table);
               free(token->data);//po zjisteni varu nazev smaze
-              free_symtab(&local_table);
-              return RETURN_STH;
+              free_symtab(&local_table, 1);
+              return 1000;
             }
           }
           //something else, need fix for only possible return types
@@ -580,10 +512,10 @@ int fction_body(Token *token, hSymtab_it *symtab_it){
             print_sym_tab(&local_table);
             printf("<-------------------------END\n\n\n");
             //add return type
-            err = expression(token, symtab_it, &local_table);
+            err = expression(NULL, token, symtab_it, &local_table);
             free(token->data);//po zjisteni varu nazev smaze
-            free_symtab(&local_table);
-            return RETURN_STH;
+            free_symtab(&local_table, 1);
+            return 1000;
           }
         }
         //no return value
@@ -592,23 +524,22 @@ int fction_body(Token *token, hSymtab_it *symtab_it){
           print_sym_tab(&local_table);
           printf("<-------------------------END\n\n\n");
           //add return type
-          free_symtab(&local_table);
-          return RETURN_STH;
+          free_symtab(&local_table, 1);
+          return 1000;
         }
       }
       else{
-        free_symtab(&local_table);
-        //indent != dedent
-        printf("test\n");
-        return ERROR_SYNTAX;
+        free_symtab(&local_table, 1);
+        return 1;
       }
+
+      //return 0;
+      //return 1;
+    //}
+
   }
-  /*else if(TOKEN_TYPE_NEEDED_CHECK(token->type, TypeDedend)){
-    dedent_counter++;
-  }*/
   else{
-    //no indent
-    return ERROR_SYNTAX;
+    return 1;
   }
 }
 
@@ -642,15 +573,10 @@ int fction_start(Token *token, hSymtab *act_table){
           printf("\n!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! nastala chyba !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n\n\n");
           return 1;
         }
-        else if(fction_return == ERROR_INTERNAL){
+        else if(fction_return == 99){
           printf("\n!!!!!!!!!!!!!!!!!!!!! malloc chyba !!!!!!!!!!!!!!!!!!!\n\n\n");
-          return ERROR_INTERNAL;
+          return 99;
         }
-        else if(fction_return == ERROR_SEMANTIC){
-          printf("two params same");
-          return ERROR_SEMANTIC;
-        }
-        //no error ->
         //get new token
         if (GET_TOKEN_CHECK_EOF(token)) {DEBUG_PRINT("Reached EOF where it shouldn't be\n"); exit(1);}
         //is there ":"" and EOF after ")"?
@@ -666,10 +592,9 @@ int fction_start(Token *token, hSymtab *act_table){
             free(fction_name.data);//dal uz nebude potreba
 
             //sterv generate_fnc_end(char* label)
-            //dead code????
 
             if (fction_body_return == 0){
-              printf("KURVAAA\n");
+              printf("return\n");
               //newline
               if (GET_TOKEN_CHECK_EOF(token)) {DEBUG_PRINT("Reached EOF where it shouldn't be\n"); exit(1);}
 
@@ -684,50 +609,46 @@ int fction_start(Token *token, hSymtab *act_table){
                 return 1;
               }
             }
-
-            //probably end of dead code ^^^
-
             //function does not have return value
-            //now change it works even when it returns sth
-            else if(fction_body_return == RETURN_STH){
+            else if(fction_body_return == 1000){
               //check dedent or eof
               if(GET_TOKEN_CHECK_EOF(token) || TOKEN_TYPE_NEEDED_CHECK(token->type, TypeDedend)){
                 printf("je tady dedent, nebo eof\n");
-                return NO_ERROR;
+                return 0;
               }
               //po returnu není dedent
               else{
                 printf("chyba kurva\n");
-                return ERROR_SYNTAX;
+                return 1;
               }
             }
-            else if(fction_body_return == ERROR_SYNTAX){
-              printf("špatně odszení\n");
-              return ERROR_SYNTAX;
+            else if(fction_body_return == 1){
+              printf("špatně\n");
+              return 1;
             }
             //jiná návratová hodnota než 1 nebo 0
             return 1;
           }
           //po ":" není EOF
           printf("\n!!!!!!!!!!!!!!!!!!!!!!!!!! CHYBA UKONČENÍ HLAVIČKY !!!!!!!!!!!!!!!!!!!!!!!!!!!!\n\n\n");
-          return ERROR_SYNTAX;
+          return 1;
         }
         //po pravé závorce není ":"
         else{
           printf("\n!!!!!!!!!!!!!!!!!!!!!!!!!! CHYBA UKONČENÍ HLAVIČKY !!!!!!!!!!!!!!!!!!!!!!!!!!!!\n\n\n");
-          return ERROR_SYNTAX;
+          return 1;
         }
       }
       else{
-        return ERROR_SEMANTIC; //function already exists
+        return 1; //function already exists
       }
     }
     //po názvu funkce nenásleduje "("
-    return ERROR_SYNTAX;
+    return 1;
   }
   //po def není TypeVariable
   else{
-    return ERROR_SYNTAX;
+    return 1;
   }
 }
 //end of functions

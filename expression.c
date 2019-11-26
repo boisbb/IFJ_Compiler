@@ -478,21 +478,6 @@ int realize_function_call(hSymtab_Func* func_data){
     }
   }
 
-  if (!act_parameters && param_cnt == 0) {
-    if(get_next_token(&act_tok) == EOF) {
-      DEBUG_PRINT("Found EOF.\n");
-      return EOF;
-    }
-
-    if (act_tok.type != TypeRightBracket) {
-      DEBUG_PRINT("Syntax error: incorrect parameters.\n");
-      return ERROR_SYNTAX;
-    }
-    else{
-      return NO_ERROR;
-    }
-  }
-
 
   while(1) {
 

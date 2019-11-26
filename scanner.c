@@ -125,80 +125,97 @@ int get_next_token(Token *token)
 				}
 				else if (c == '+')
 				{
+					first_token = false;
 					token->type = TypeOperatorPlus;
 					break_while = true;
 				}
 				else if(c == '-')
 				{
+					first_token = false;
 					token->type = TypeOperatorMinus;
 					break_while = true;
 				}
 				else if(c == '*')
 				{
+					first_token = false;
 					token->type = TypeOperatorMul;
 					break_while = true;
 				}
 				else if(c == '/')
 				{
+					first_token = false;
 					state = STATE_DIV;
 				}
 				else if(c == '=')
 				{
+					first_token = false;
 					state = STATE_EQUALS;
 				}
 				else if(c == '(')
 				{
+					first_token = false;
 					token->type = TypeLeftBracket;
 					break_while = true;
 				}
 				else if(c == ')')
 				{
+					first_token = false;
 					token->type = TypeRightBracket;
 					break_while = true;
 				}
 				else if(c == ':')
 				{
+					first_token = false;
 					token->type = TypeColon;
 					break_while = true;
 				}
 				else if(c == ',')
 				{
+					first_token = false;
 					token->type = TypeComma;
 					break_while = true;
 				}
 				/*else if(c == '\t')
 				{
+					first_token = false;
 					token->type = TypeTab;
 					break_while = true;
 				}*/
 				else if(c == '>')
 				{
+					first_token = false;
 					state = STATE_GREATER;
 				}
 				else if(c == '<')
 				{
+					first_token = false;
 					state = STATE_LESSER;
 				}
 				else if(c == '!')
 				{
+					first_token = false;
 					state = STATE_NEGATION;
 				}
 				else if(c == '#')
 				{
+					first_token = false;
 					state = STATE_LINE_COMMENT;
 				}
 				else if(c == '\"')
 				{
+					first_token = false;
 					state = STATE_DOC_STRING_IN1;
 				}
 				else if(c == '\'')
 				{
+					first_token = false;
 					if(!str_init(&str))
 						return ERROR_INTERNAL;
 					state = STATE_STRING;
 				}
 				else if(isdigit(c))
 				{
+					first_token = false;
 					if(!str_init(&str))
 						return ERROR_INTERNAL;
 					if(!str_pushc(&str, c))

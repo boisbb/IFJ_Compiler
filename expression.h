@@ -30,9 +30,9 @@ typedef struct st_id {
 
 int term_stack_init();
 
-int expression(Token *act_tok, hSymtab_it *p_variable, hSymtab *actual_table);
+int expression(Token *pre_token, Token *act_tok, hSymtab_it *p_variable, hSymtab *actual_table);
 
-int expression_eval(int fction_switch);
+int expression_eval(int fction_switch, int pre_token_switch);
 
 int s_push();
 

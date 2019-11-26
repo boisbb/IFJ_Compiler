@@ -44,7 +44,118 @@ int err = 0;
 extern hSymtab *table;
 const char *operNames[];
 
+
+// Basic without expressions yet // add code generating
+int fction_call(Token *token, hSymtab *act_table){
+  Type prev;
+  hSymtab_it *tmp_item_func = symtab_it_position((char*)token->data, act_table);
+  if (tmp_item_func) {
+    if (tmp_item_func->item_type == IT_FUNC) {
+
+      hSymtab_Func_Param *tmp_params = ((hSymtab_Func*)tmp_item_func->data)->params;
+      if (!tmp_params) {
+        if (GET_TOKEN_CHECK_EOF(token) && TOKEN_TYPE_NEEDED_CHECK(token->type, TypeRightBracket)) {
+          return NO_ERROR;
+        }
+      }
+      else {
+        if (GET_TOKEN_CHECK_EOF(token)) {
+          return ERROR_SYNTAX;
+        }
+        while (1){
+
+
+          if (token->type == TypeComma) {
+            if (prev == TypeComma) {
+              return ERROR_SYNTAX;
+            }
+            prev = TypeComma;
+
+            if (GET_TOKEN_CHECK_EOF(token)) {
+              return ERROR_SYNTAX;
+            }
+          }
+          else {
+            if (tmp_params->param_type == TypeUnspecified) {
+              if (token->type == TypeString || token->type == TypeFloat || token->type == TypeInt || token->type == TypeUnspecified) {
+                prev = token->type;
+
+                if (GET_TOKEN_CHECK_EOF(token)) {
+                  return ERROR_SYNTAX;
+                }
+
+                if (!tmp_params->next) {
+                  if (token->type != TypeRightBracket) {
+                    return ERROR_SEMANTIC;
+                  }
+                }
+                else{
+                  if (token->type == TypeRightBracket) {
+                    return ERROR_SEMANTIC;
+                  }
+                }
+
+                tmp_params = tmp_params->next;
+              }
+            }
+            else{
+              if (token->type != tmp_params->param_type) {
+
+                return ERROR_SEMANTIC;
+              }
+              else {
+
+                prev = token->type;
+
+                if (GET_TOKEN_CHECK_EOF(token)) {
+                  return ERROR_SYNTAX;
+                }
+
+                if (!tmp_params->next) {
+                  if (token->type != TypeRightBracket) {
+                    return ERROR_SEMANTIC;
+                  }
+                  else {
+                    return NO_ERROR;
+                  }
+                }
+                else{
+                  if (token->type == TypeRightBracket) {
+                    return ERROR_SEMANTIC;
+                  }
+                }
+                tmp_params = tmp_params->next;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+
+int statement_body(Token *token, hSymtab *act_table){
+  while (token->type != TypeDedend) {
+
+    if (GET_TOKEN_CHECK_EOF(token)) {DEBUG_PRINT("Reached EOF successfully\n"); return NO_ERROR;}
+
+    if (TOKEN_TYPE_NEEDED_CHECK(token->type, TypeDedend)) {
+      return NO_ERROR;
+    }
+
+    err = command(token, act_table, 0, 1);
+    if (err != NO_ERROR) {
+      return err;
+    }
+  }
+}
+
+
 int statement(Token *token, hSymtab *act_table){
+
+  int indent_cnt = 0;
+
   if (!strcmp((char*)token->data, "if")){
     printf("\t \tSENT TO GENERATOR: %s\n", (char*)token->data);
   }
@@ -54,32 +165,46 @@ int statement(Token *token, hSymtab *act_table){
 
   if (GET_TOKEN_CHECK_EOF(token)) {DEBUG_PRINT("Reached EOF or Newline where it shouldn't be\n"); exit(1);}
 
-  if (TOKEN_TYPE_NEEDED_CHECK(token, TypeInt) || TOKEN_TYPE_NEEDED_CHECK(token, TypeFloat) || TOKEN_TYPE_NEEDED_CHECK(token, TypeString) ||
-      TOKEN_TYPE_NEEDED_CHECK(token, TypeVariable)) {
-    err = expression(token, NULL, act_table);
+  printf("%d\n", TOKEN_TYPE_NEEDED_CHECK(token->type, TypeInt));
 
-    if (!TOKEN_TYPE_NEEDED_CHECK(token, TypeColon)) {
+
+  if (TOKEN_TYPE_NEEDED_CHECK(token->type, TypeInt) || TOKEN_TYPE_NEEDED_CHECK(token->type, TypeFloat) || TOKEN_TYPE_NEEDED_CHECK(token->type, TypeString) ||
+      TOKEN_TYPE_NEEDED_CHECK(token->type, TypeVariable)) {
+    printf("a\n");
+    err = expression(NULL, token, NULL, act_table);
+
+    if (!TOKEN_TYPE_NEEDED_CHECK(token->type, TypeColon)) {
       DEBUG_PRINT("Syntax error: Colon is missing\n");
       return ERROR_SYNTAX;
     }
 
-    // TODO
+    if (GET_TOKEN_CHECK_EOF(token)) {
+      DEBUG_PRINT("Reached EOF where it should not be. \n");
+      return ERROR_SYNTAX;
+    }
+
+    if (!TOKEN_TYPE_NEEDED_CHECK(token->type, TypeNewLine)) {
+      DEBUG_PRINT("Syntax error: Newline is missing\n");
+      return ERROR_SYNTAX;
+    }
+
+
+    if (GET_TOKEN_CHECK_EOF(token) || !TOKEN_TYPE_NEEDED_CHECK(token->type, TypeIndent)) {
+      DEBUG_PRINT("Reached EOF where it should not be or indent missing. \n");
+      return ERROR_SYNTAX;
+    }
+
+    err = statement_body(token, act_table);
+    return err;
+    printf("we good\n");
+    exit(0);
+
 
   }
   else if (!strcmp((char*)token->data, "None")){
 
   }
 
-}
-
-
-int fction_call(Token *token, hSymtab *act_table){
-  hSymtab_it *tmp_fct = NULL;
-  if ((tmp_fct = symtab_it_position((char*)token->data, act_table))){
-    if (tmp_fct->item_type == IT_FUNC) {
-
-    }
-  }
 }
 
 
@@ -99,9 +224,14 @@ int assignment(Token *var, Token *value, hSymtab *act_table){
 
     if (!symtab_it_position((char*)var->data, act_table))
       symtab_add_it(act_table, var);
-    err = expression(value, (*act_table)[symtab_hash_function((char*)var->data)], act_table);
+    err = expression(NULL ,value, (*act_table)[symtab_hash_function((char*)var->data)], act_table);
     if (err == ERROR_SYNTAX || err == ERROR_SEMANTIC) {
       return err;
+    }
+
+    if (!TOKEN_TYPE_NEEDED_CHECK(value->type, TypeNewLine)) {
+      DEBUG_PRINT("Colon not newline\n");
+      return ERROR_SYNTAX;
     }
     ((hSymtab_Var*)((*act_table)[symtab_hash_function((char*)var->data)]->data))->defined = true;
     ((hSymtab_Var*)((*act_table)[symtab_hash_function((char*)var->data)]->data))->global = true;
@@ -111,7 +241,8 @@ int assignment(Token *var, Token *value, hSymtab *act_table){
 }
 
 
-int command(Token *token, hSymtab *act_table, int in_function){
+int command(Token *token, hSymtab *act_table, int in_function, int statement_switch){
+
 
   if (TOKEN_TYPE_NEEDED_CHECK(token->type, TypeVariable)) {
     Token token_n;
@@ -122,7 +253,7 @@ int command(Token *token, hSymtab *act_table, int in_function){
 
     if (TOKEN_TYPE_NEEDED_CHECK(token_n.type, TypeAssignment)) {
 
-      assignment(token, &token_n, act_table);
+      err = assignment(token, &token_n, act_table);
       if (in_function == 1 && !symtab_it_position((char*)token->data, table)) {
         ((hSymtab_Var*)symtab_it_position((char*)token->data, act_table)->data)->global = false;
       }
@@ -133,10 +264,21 @@ int command(Token *token, hSymtab *act_table, int in_function){
     else if(TOKEN_TYPE_NEEDED_CHECK(token_n.type, TypeLeftBracket)){
 
       // funguje pouze s globalni tabulkou // TODO
-      fction_call(token, act_table);
+      err = fction_call(token, act_table);
+
+      return err;
+    }
+    else {
+      err = expression(token, &token_n, NULL, act_table);
+      return err;
     }
   }
-  else if (strcmp((char*)token->data, "def") == 0) {
+  else if (TOKEN_TYPE_NEEDED_CHECK(token->type, TypeInt) || TOKEN_TYPE_NEEDED_CHECK(token->type, TypeString) ||
+          TOKEN_TYPE_NEEDED_CHECK(token->type, TypeFloat)) {
+    err = expression(NULL, token, NULL, act_table);
+    return err;
+  }
+  else if (strcmp((char*)token->data, "def") == 0 && statement_switch == 0) {
     free(token->data);//po tomhle ifu useless
     if (fction_start(token, act_table) == 0){
       printf("jsem zpátky v body/command\n\n\n");
@@ -156,14 +298,17 @@ int command(Token *token, hSymtab *act_table, int in_function){
   } // Pridat None a Pass
   else if (TOKEN_TYPE_NEEDED_CHECK(token->type, TypeKeyword)) {
       err = statement(token, act_table);
+      return err;
   }
-  return false;
+  else {
+    return ERROR_SYNTAX;
+  }
 }
 
 int body(Token *token, hSymtab *act_table){
   while (1) {
       if (err == NO_ERROR) {
-        command(token, act_table, 0);
+        err = command(token, act_table, 0, 0);
         if (err == ERROR_SYNTAX || err == ERROR_SEMANTIC) {
           DEBUG_PRINT("Error occured, parsing ended.\n");
           return err;
@@ -173,7 +318,12 @@ int body(Token *token, hSymtab *act_table){
         DEBUG_PRINT("Found EOF, parsing terminated.\n");
         return err;
       }
-      if (GET_TOKEN_CHECK_EOF(token)) {DEBUG_PRINT("Found EOF, parsing terminated.\n"); return;}
+
+      if (GET_TOKEN_CHECK_EOF(token)) {DEBUG_PRINT("Found EOF, parsing terminated.\n"); return err;}
+
+      if (TOKEN_TYPE_NEEDED_CHECK(token->type, TypeNewLine)) {
+        if (GET_TOKEN_CHECK_EOF(token)) {DEBUG_PRINT("Found EOF, parsing terminated.\n"); return err;}
+      }
 
   }
 }
@@ -315,7 +465,7 @@ int fction_body(Token *token, hSymtab_it *symtab_it){
 
       while (strcmp((char*)token->data, "return") != 0) {
           if (err == NO_ERROR) {
-            command(token, &local_table, 1);
+            command(token, &local_table, 1, 0);
             if (err == ERROR_SYNTAX || err == ERROR_SEMANTIC) {
               DEBUG_PRINT("Error occured, parsing ended.\n");
               return err;
@@ -349,7 +499,7 @@ int fction_body(Token *token, hSymtab_it *symtab_it){
               print_sym_tab(&local_table);
               printf("<-------------------------END\n\n\n");
               //add return type
-              err = expression(token, symtab_it, &local_table);
+              err = expression(NULL, token, symtab_it, &local_table);
               free(token->data);//po zjisteni varu nazev smaze
               free_symtab(&local_table, 1);
               return 1000;
@@ -362,7 +512,7 @@ int fction_body(Token *token, hSymtab_it *symtab_it){
             print_sym_tab(&local_table);
             printf("<-------------------------END\n\n\n");
             //add return type
-            err = expression(token, symtab_it, &local_table);
+            err = expression(NULL, token, symtab_it, &local_table);
             free(token->data);//po zjisteni varu nazev smaze
             free_symtab(&local_table, 1);
             return 1000;

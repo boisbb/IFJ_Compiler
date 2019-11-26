@@ -11,7 +11,7 @@
 
 // Symtable item data
 typedef struct symIt_Var {
-  int global; // 0 if its not global | 1 if its global
+  bool global; // 0 if its not global | 1 if its global
   bool defined;
   Type type;
 
@@ -58,6 +58,8 @@ void symtab_add_var_data(hSymtab_it *symtab_it, Type type);
 
 void symtab_add_predef_func(hSymtab *table);
 
-void free_symtab(hSymtab *table);
+void free_symtab(hSymtab *table, int switch_local);
 
 int is_item_var_defined(char *desired, hSymtab *sym_tab);
+
+int symtab_copy(hSymtab *origin, hSymtab *new);

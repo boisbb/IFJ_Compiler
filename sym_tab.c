@@ -280,7 +280,22 @@ void symtab_add_predef_func(hSymtab *table){
 
 }
 
-void free_symtab(hSymtab *table){
+int symtab_copy(hSymtab *origin, hSymtab *new){
+  hSymtab_it *tmp;
+  hSymtab_it *swp;
+  hSymtab_it *tmp_new;
+
+  hSymtab_Func_Param *tmp_param = NULL;
+  hSymtab_Func_Param *swp_param = NULL;
+
+  for (int i = 0; i < HTAB_PRIME; i++){
+    if ((*origin)[i] != NULL) {
+      (*new)[i] = (*origin)[i];
+    }
+  }
+}
+
+void free_symtab(hSymtab *table, int switch_local){
   hSymtab_it *tmp;
   hSymtab_it *swp;
   hSymtab_Func_Param *tmp_param = NULL;
@@ -291,6 +306,18 @@ void free_symtab(hSymtab *table){
       tmp = (*table)[i];
       while (tmp) {
         swp = tmp->next;
+        if (switch_local) {
+          if (tmp->item_type == IT_FUNC) {
+            tmp = swp;
+            continue;
+          }
+          else if (tmp->item_type == IT_VAR){
+            if (((hSymtab_Var*)tmp->data)->global == 1) {
+              tmp = swp;
+              continue;
+            }
+          }
+        }
         if (tmp->item_type == IT_FUNC) {
           if (((hSymtab_Func*)tmp->data)->params){
             tmp_param = ((hSymtab_Func*)tmp->data)->params;

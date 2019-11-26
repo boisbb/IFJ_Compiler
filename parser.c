@@ -44,8 +44,48 @@ int err = 0;
 extern hSymtab *table;
 const char *operNames[];
 
+int statement(Token *token, hSymtab *act_table){
+  if (!strcmp((char*)token->data, "if")){
+    printf("\t \tSENT TO GENERATOR: %s\n", (char*)token->data);
+  }
+  else if(!strcmp((char*)token->data, "while")) {
+    printf("\t \tSENT TO GENERATOR: %s\n", (char*)token->data);
+  }
 
-void assignment(Token *var, Token *value, hSymtab *act_table){
+  if (GET_TOKEN_CHECK_EOF(token)) {DEBUG_PRINT("Reached EOF or Newline where it shouldn't be\n"); exit(1);}
+
+  if (TOKEN_TYPE_NEEDED_CHECK(token, TypeInt) || TOKEN_TYPE_NEEDED_CHECK(token, TypeFloat) || TOKEN_TYPE_NEEDED_CHECK(token, TypeString) ||
+      TOKEN_TYPE_NEEDED_CHECK(token, TypeVariable)) {
+    err = expression(token, NULL, act_table);
+
+    if (!TOKEN_TYPE_NEEDED_CHECK(token, TypeColon)) {
+      DEBUG_PRINT("Syntax error: Colon is missing\n");
+      return ERROR_SYNTAX;
+    }
+
+    // TODO
+
+  }
+  else if (!strcmp((char*)token->data, "None")){
+
+  }
+
+}
+
+
+int fction_call(Token *token, hSymtab *act_table){
+  hSymtab_it *tmp_fct = NULL;
+  if ((tmp_fct = symtab_it_position((char*)token->data, act_table))){
+    if (tmp_fct->item_type == IT_FUNC) {
+
+    }
+  }
+}
+
+
+
+
+int assignment(Token *var, Token *value, hSymtab *act_table){
 
   // GENERATE INSTRUCTION //
     printf("\t \tSENT TO GENERATOR: %s\n", (char*)var->data);
@@ -64,8 +104,7 @@ void assignment(Token *var, Token *value, hSymtab *act_table){
       return err;
     }
     ((hSymtab_Var*)((*act_table)[symtab_hash_function((char*)var->data)]->data))->defined = true;
-    DEBUG_PRINT("The variable is type: %s\n", operNames[((hSymtab_Var*)((*act_table)[symtab_hash_function((char*)var->data)]->data))->type]);
-    DEBUG_PRINT("Next token is: %s\n", operNames[value->type]);
+    ((hSymtab_Var*)((*act_table)[symtab_hash_function((char*)var->data)]->data))->global = true;
 
     return err;
 
@@ -84,9 +123,17 @@ int command(Token *token, hSymtab *act_table, int in_function){
     if (TOKEN_TYPE_NEEDED_CHECK(token_n.type, TypeAssignment)) {
 
       assignment(token, &token_n, act_table);
+      if (in_function == 1 && !symtab_it_position((char*)token->data, table)) {
+        ((hSymtab_Var*)symtab_it_position((char*)token->data, act_table)->data)->global = false;
+      }
       return err;
 
 
+    }
+    else if(TOKEN_TYPE_NEEDED_CHECK(token_n.type, TypeLeftBracket)){
+
+      // funguje pouze s globalni tabulkou // TODO
+      fction_call(token, act_table);
     }
   }
   else if (strcmp((char*)token->data, "def") == 0) {
@@ -106,6 +153,9 @@ int command(Token *token, hSymtab *act_table, int in_function){
       body(token, act_table);
     }
 
+  } // Pridat None a Pass
+  else if (TOKEN_TYPE_NEEDED_CHECK(token->type, TypeKeyword)) {
+      err = statement(token, act_table);
   }
   return false;
 }
@@ -239,7 +289,8 @@ int fction_body(Token *token, hSymtab_it *symtab_it){
 
   hSymtab local_table;
   symtab_init(&local_table);
-  symtab_add_predef_func(&local_table);
+  symtab_copy(table, &local_table);
+
 
 
   //to copy params to local_table
@@ -252,6 +303,7 @@ int fction_body(Token *token, hSymtab_it *symtab_it){
     param.type = TypeVariable;
     symtab_add_it(&local_table, &param);
     ((hSymtab_Var*)symtab_it_position((char*)param.data, &local_table)->data)->defined = true;
+    ((hSymtab_Var*)symtab_it_position((char*)param.data, &local_table)->data)->global = false;
     params = params->next;
   }
 
@@ -296,9 +348,9 @@ int fction_body(Token *token, hSymtab_it *symtab_it){
               print_sym_tab(&local_table);
               printf("<-------------------------END\n\n\n");
               //add return type
-              err = expression(token, symtab_it, local_table);
+              err = expression(token, symtab_it, &local_table);
               free(token->data);//po zjisteni varu nazev smaze
-              free_symtab(&local_table);
+              free_symtab(&local_table, 1);
               return 1000;
             }
           }
@@ -309,9 +361,9 @@ int fction_body(Token *token, hSymtab_it *symtab_it){
             print_sym_tab(&local_table);
             printf("<-------------------------END\n\n\n");
             //add return type
-            err = expression(token, symtab_it, local_table);
+            err = expression(token, symtab_it, &local_table);
             free(token->data);//po zjisteni varu nazev smaze
-            free_symtab(&local_table);
+            free_symtab(&local_table, 1);
             return 1000;
           }
         }
@@ -321,12 +373,12 @@ int fction_body(Token *token, hSymtab_it *symtab_it){
           print_sym_tab(&local_table);
           printf("<-------------------------END\n\n\n");
           //add return type
-          free_symtab(&local_table);
+          free_symtab(&local_table, 1);
           return 1000;
         }
       }
       else{
-        free_symtab(&local_table);
+        free_symtab(&local_table, 1);
         return 1;
       }
 
@@ -474,5 +526,5 @@ int prog() {
   free_symtab(table);
   free(table);
 */
-  return 0;
+  return err;
 }

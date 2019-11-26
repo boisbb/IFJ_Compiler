@@ -40,3 +40,6 @@ ad #fdsfsd
 afddasfs
  afasf a\" dfsd ""
 """)
+a = None
+if a:
+  pass

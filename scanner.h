@@ -33,6 +33,9 @@ typedef enum
 	TypeIndent,
 	TypeDedend,
 
+	TypeKeywordNone,
+	TypeKeywordPass,
+
 	// Following tokens cant be returned from scanner
 	TypeUnspecified, // For adding variables into symtable
 	TypeFunc, // For adding functions into symtable

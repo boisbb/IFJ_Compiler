@@ -37,7 +37,7 @@ int main() {
   int err = -1;
   err = prog();
   if (err != NO_ERROR) {
-    DEBUG_PRINT("_____PARSING ENDED WITH ERROR_____\n");
+    DEBUG_PRINT("_____PARSING ENDED WITH ERROR %d_____\n", err);
     return err;
   }
   print_sym_tab(table);

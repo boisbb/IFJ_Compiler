@@ -9,6 +9,7 @@ TermStack expr_stack;
 IdStack id_stack;
 hSymtab_it *variable;
 Token act_tok;
+Token pre_tok;
 int error;
 int id_stack_cnt = 0;
 
@@ -87,11 +88,17 @@ PRECED_TABLE_ITEM convert_token_type_to_prec_type(Token *token){
 }
 
 // Processes the token
-int expression(Token *act_token, hSymtab_it *p_variable, hSymtab *actual_table){
+int expression(Token *pre_token, Token *act_token, hSymtab_it *p_variable, hSymtab *actual_table){
   variable = p_variable;
   act_tok = *act_token;
   s_table = actual_table;
-  error = expression_eval(0);
+
+  if (pre_token) {
+    pre_tok = *pre_token;
+  }
+
+
+  error = expression_eval(0, pre_token != NULL);
 
   free(expr_stack.top);
   free(id_stack.top);
@@ -102,10 +109,30 @@ int expression(Token *act_token, hSymtab_it *p_variable, hSymtab *actual_table){
 }
 
 
-int expression_eval(int fction_switch){
+int expression_eval(int fction_switch, int pre_token_switch){
   if (fction_switch == 0) {
     term_stack_init();
   }
+
+  ////
+  if (pre_token_switch) {
+    TermStackIt tmp_s_it;
+    if (pre_tok.type == TypeVariable) {
+      if (symtab_it_position((char*)pre_tok.data, s_table)) {
+        //GENERATE CODE FOR ASSIGN TOKEN
+        printf("\t \tSENT TO GENERATOR: %s\n", (char*)pre_tok.data);
+      }
+      else {
+        DEBUG_PRINT("Variable %s does not exist\n", (char*)pre_tok.data);
+        return ERROR_SYNTAX;
+      }
+    }
+    tmp_s_it.tok_cont = pre_tok.data;
+    tmp_s_it.type = pre_tok.type;
+    id_s_push(&tmp_s_it);
+  }
+  ////
+
   int token_index = 0;
   int par_cnt = 1;
 
@@ -162,6 +189,7 @@ int expression_eval(int fction_switch){
         if (s_push(&act_tok) == ERROR_SEMANTIC)
           return ERROR_SEMANTIC;
 
+
         if(get_next_token(&act_tok) == EOF) {
           DEBUG_PRINT("Parsing ended: found EOF.\n");
           return EOF;
@@ -178,10 +206,10 @@ int expression_eval(int fction_switch){
         break;
       default:
 
-      if (act_tok.type == TypeNewLine) {
-        printf("FOUND NEWLINE\n");
-        return NO_ERROR;
-      }
+        if (act_tok.type == TypeNewLine || act_tok.type == TypeColon) {
+          printf("FOUND NEWLINE OR COLON\n");
+          return NO_ERROR;
+        }
 
         DEBUG_PRINT("SYNTAX ERROR: Wrong input.\n");
         return ERROR_SYNTAX;
@@ -235,12 +263,7 @@ int s_pop(){
 
 int s_free(){
 
-  //s_pop();
 
-  if (expr_stack.top->next == NULL) {
-    printf("NULLIOBROLIO\n");
-    exit(1);
-  }
 }
 
 int id_stack_init(){
@@ -423,7 +446,7 @@ int realize_function_call(hSymtab_Func* func_data){
 
 
   // Push fction name
-  s_push(&act_tok);
+  s_push();
 
   printf("\t \tSENT TO GENERATOR: %s\n", (char*)expr_stack.top->tok_cont);
 
@@ -438,7 +461,22 @@ int realize_function_call(hSymtab_Func* func_data){
     return ERROR_SYNTAX;
   }
 
-  s_push(&act_tok);
+  s_push();
+
+  if (!act_parameters && param_cnt == 0) {
+    if(get_next_token(&act_tok) == EOF) {
+      DEBUG_PRINT("Found EOF.\n");
+      return EOF;
+    }
+
+    if (act_tok.type != TypeRightBracket) {
+      DEBUG_PRINT("Syntax error: incorrect parameters.\n");
+      return ERROR_SYNTAX;
+    }
+    else{
+      return NO_ERROR;
+    }
+  }
 
   if (!act_parameters && param_cnt == 0) {
     if(get_next_token(&act_tok) == EOF) {
@@ -471,7 +509,7 @@ int realize_function_call(hSymtab_Func* func_data){
     }
     else if (convert_token_type_to_prec_type(&act_tok) == IDENTIFIER && param_cnt != 0){
 
-      expression_eval(REALIZE_FUNC);
+      expression_eval(REALIZE_FUNC, 0);
       param_cnt--;
 
 

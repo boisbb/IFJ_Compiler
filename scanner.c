@@ -12,7 +12,8 @@
 
 
 /////// CONSTANTS ////
-const char *keywords[] = {"def", "else", "if", "None", "pass", "return", "while"};
+const char *keywords[] = { "def", "else", "if", "None", "pass", "return", "while" };
+const Type keyword_types[] = { TypeUndefined, TypeUndefined, TypeUndefined, TypeKeywordNone, TypeKeywordPass, TypeUndefined, TypeUndefined };
 
 /////// STATES ///////
 #define STATE_INITIAL 259
@@ -502,22 +503,34 @@ int get_next_token(Token *token)
 				{
 					ungetc(c, _stream);
 
+					bool cpy = true;
 					token->type = TypeVariable;
 					for(size_t i = 0; i < sizeof(keywords) / sizeof(keywords[0]); i++)
 					{
 						if(strcmp(str.content, keywords[i]) == 0)
 						{
-							token->type = TypeKeyword;
+							if(keyword_types[i] != TypeUndefined)
+							{
+								token->type = keyword_types[i];
+								cpy = false;
+							}
+							else
+							{
+								token->type = TypeKeyword;
+							}
 							break;
 						}
 					}
 
-					if (!(token->data = malloc(sizeof(char) * str.asize + 1)))
+					if(cpy)
 					{
-						str_free(&str);
-						return ERROR_INTERNAL;
+						if (!(token->data = malloc(sizeof(char) * str.asize + 1)))
+						{
+							str_free(&str);
+							return ERROR_INTERNAL;
+						}
+						strcpy(token->data, str.content);
 					}
-					strcpy(token->data, str.content);
 					str_free(&str);
 					break_while = true;
 				}
@@ -649,7 +662,7 @@ int get_next_token(Token *token)
 }
 
 #if defined(DEBUG) && DEBUG > 0
-const char *type_names[] = {"+", "-", "*", "/", "//", "=", "==", ">", ">=", "<", "<=", "!", "!=", "(", ")", ":", ",", /*"tab", */"new line", "keyword", "variable", "string", "documentary string", "int", "float", "indent", "dedent"};
+const char *type_names[] = {"+", "-", "*", "/", "//", "=", "==", ">", ">=", "<", "<=", "!", "!=", "(", ")", ":", ",", /*"tab", */"new line", "keyword", "variable", "string", "documentary string", "int", "float", "indent", "dedent", "None", "pass"};
 int scanner_main()
 {
 	Token token = {};
@@ -660,7 +673,7 @@ int scanner_main()
 	while((err_num = get_next_token(&token)) == 0)
 	{
 		if(token.type == TypeString || token.type == TypeVariable || token.type == TypeKeyword || token.type == TypeDocString)
-			printf("AToken type: %s | Token data: %s \n", type_names[token.type], (char*)token.data);
+			printf("Token type: %s | Token data: %s \n", type_names[token.type], (char*)token.data);
 		else if(token.type == TypeInt)
 			printf("Token type: %s | Token data: %i \n", type_names[token.type], *(int*)token.data);
 		else if(token.type == TypeFloat)

@@ -1,11 +1,12 @@
 <prog> -> <body>
-<prog> -> <fction_start> INDENT <body> DEDENT <body>
+<body> -> <fction_start> INDENT <body> DEDENT <body>
 <body> -> <command> EOL <body>
 <body> -> EPSilon
 <fction_start> -> def fctionNAME(<arg> : EOL
 <arg> -> ID <arg_n>)
 <arg_n> -> , ID <args>
 <arg_n> -> EPSilon
+<command> -> <body>
 <command> -> <statement>
 <command> -> ID = <value>
 <statement> -> <if_statem>

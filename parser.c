@@ -49,12 +49,14 @@ const char *operNames[];
 // Basic without expressions yet // add code generating
 int fction_call(Token *token, hSymtab *act_table){
   Type prev;
+
   unsigned param_cntr = 0;
   hSymtab_it *tmp_item_func = symtab_it_position((char*)token->data, act_table);
   if (tmp_item_func) {
     if (tmp_item_func->item_type == IT_FUNC) {
 
       hSymtab_Func_Param *tmp_params = ((hSymtab_Func*)tmp_item_func->data)->params;
+      int act_parameters_cnt = symtab_num_of_fction_params(tmp_params);
       if (!tmp_params) {
         if (GET_TOKEN_CHECK_EOF(token) && TOKEN_TYPE_NEEDED_CHECK(token->type, TypeRightBracket)) {
 
@@ -66,8 +68,9 @@ int fction_call(Token *token, hSymtab *act_table){
         if (GET_TOKEN_CHECK_EOF(token)) {
           return ERROR_SYNTAX;
         }
-        while (1){
 
+
+        while (1){
 
           if (token->type == TypeComma) {
             if (prev == TypeComma) {
@@ -81,6 +84,7 @@ int fction_call(Token *token, hSymtab *act_table){
           }
           else {
             if (tmp_params->param_type == TypeUnspecified) {
+
               if (token->type == TypeString || token->type == TypeFloat || token->type == TypeInt || token->type == TypeUnspecified) {
                 prev = token->type;
 
@@ -91,6 +95,11 @@ int fction_call(Token *token, hSymtab *act_table){
                 if (!tmp_params->next) {
                   if (token->type != TypeRightBracket) {
                     return ERROR_SEMANTIC;
+                  }
+                  else {
+
+                    // generate code
+                    return NO_ERROR;
                   }
                 }
                 else{
@@ -107,7 +116,6 @@ int fction_call(Token *token, hSymtab *act_table){
             }
             else{
               if (token->type != tmp_params->param_type) {
-
                 return ERROR_SEMANTIC;
               }
               else {
@@ -237,11 +245,16 @@ int assignment(Token *var, Token *value, hSymtab *act_table, int in_function){
   bool global = true;
     if (!symtab_it_position((char*)var->data, act_table))
     {
-        /* ERROR SEG FAULT
-            if (symtab_it_position((char*)var->data, act_table)->item_type == IT_VAR) {
-                err = fction_call(var, act_table);
+        /* ERROR SEG FAULT */
+            if (symtab_it_position((char*)value->data, act_table)->item_type == IT_FUNC) {
+              Token bracket;
+
+              if (GET_TOKEN_CHECK_EOF(&bracket) || !TOKEN_TYPE_NEEDED_CHECK(bracket.type, TypeLeftBracket)){
+                return ERROR_SYNTAX;
+              }
+                err = fction_call(value, act_table);
                 return err;
-            }*/
+            }
             symtab_add_it(act_table, var);
             ((hSymtab_Var*)((*act_table)[symtab_hash_function((char*)var->data)]->data))->global = true;
             generate_var_declaration((char*)var->data, !in_function);
@@ -753,7 +766,7 @@ int prog() {
   generate_main_end();
 
   char * str =generator_code_get();
-  printf("%s\n", str);
+  //printf("%s\n", str);
 
 /*
   free_symtab(table);

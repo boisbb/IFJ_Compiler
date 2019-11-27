@@ -33,6 +33,7 @@ int symtab_num_of_fction_params(hSymtab_Func* symtab_func_data){
 
 hSymtab_it *symtab_it_position(char *searched_for, hSymtab *sym_tab){
   hSymtab_it *tmp = (*sym_tab)[symtab_hash_function(searched_for)];
+  //printf("%d\n", tmp->hKey == NULL);
   while (tmp != NULL) {
     if(!(strcmp(searched_for, tmp->hKey))) return tmp;
     tmp = tmp->next;

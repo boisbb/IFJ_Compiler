@@ -7,7 +7,7 @@
 
 hSymtab *table;
 
-extern const char *operNames[] = {"+", "-", "*", "/", "//", "=", "==", ">", ">=", "<", "<=", "!", "!=", "(", ")", ":", ",", "new line", "keyword", "variable", "string", "documentary string", "int", "float", "indent", "dedent", "unspecified", "func", "undefined"};
+extern const char *operNames[] = {"+", "-", "*", "/", "//", "=", "==", ">", ">=", "<", "<=", "!", "!=", "(", ")", ":", ",", "new line", "keyword", "variable", "string", "documentary string", "int", "float", "indent", "dedent", "None", "pass", "unspecified", "func", "undefined"};
 
 
 void print_sym_tab(hSymtab *table){
@@ -45,5 +45,7 @@ int main() {
   DEBUG_PRINT("_____PARSING ENDED_____\n");
   free_symtab(table, 0);
   free(table);
+  
+  generator_free();
   scanner_free();
 }

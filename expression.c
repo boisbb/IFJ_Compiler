@@ -2,6 +2,7 @@
 #include <stdio.h>
 
 #include "expression.h"
+#include "generator.h"
 #define P_SIZE 9
 
 hSymtab *s_table;
@@ -96,7 +97,6 @@ int expression(Token *pre_token, Token *act_token, hSymtab_it *p_variable, hSymt
   if (pre_token) {
     pre_tok = *pre_token;
   }
-
 
   error = expression_eval(0, pre_token != NULL);
 
@@ -346,7 +346,9 @@ int ready_to_pop(int fction_switch){
               }
 
               printf("\t \tSENT TO GENERATOR: %s\n", (char*)expr_stack.top->tok_cont);
-
+              bool scope = ((hSymtab_Var*)symtab_it_position((char*)expr_stack.top->tok_cont, s_table)->data)->global;
+              generate_push_var((char*)expr_stack.top->tok_cont, scope);
+              //printf("%s\n", generator_code_get());
             }
             /*
 
@@ -367,6 +369,7 @@ int ready_to_pop(int fction_switch){
           else
             printf("\t \tSENT TO GENERATOR: %s\n", (char*)expr_stack.top->tok_cont);
           ///
+          generate_push_data(expr_stack.top->type, expr_stack.top->tok_cont);
 
           id_s_push(expr_stack.top);
 
@@ -573,6 +576,7 @@ int check_operators_and_operands_syntax(Type operator, int fction_switch){
     if((!variable) && (operator == TypeEquality || operator == TypeUnEquality || operator == TypeGreater ||
         operator == TypeGreaterEq || operator == TypeLesser || operator == TypeLesserEq || operator == TypeNegation)){
       id_s_pop();
+      generate_operation(operator); //generator
       return NO_ERROR;
     }
     else if((variable) && (operator == TypeEquality || operator == TypeUnEquality || operator == TypeGreater ||
@@ -596,11 +600,14 @@ int check_operators_and_operands_syntax(Type operator, int fction_switch){
       else {
         param_type = TypeInt;
       }
-
     }
+    generate_operation(operator); //generator
   }
   else if(l_operand.type == TypeInt && r_operand.type == TypeInt && operator == TypeOperatorDiv){
     result = TypeFloat;
+
+    generate_operation_retype_first_int2float();
+    generate_operation_retype_sec_int2float();
 
     if (fction_switch != 1){
       if (variable) {
@@ -615,14 +622,20 @@ int check_operators_and_operands_syntax(Type operator, int fction_switch){
     else {
       param_type = TypeFloat;
     }
-
+    generate_operation(operator); //generator
   } // When both operands are either Float or INT or any combination, there is no need to check syntax
   else if ((l_operand.type == TypeFloat && r_operand.type == TypeInt) || (l_operand.type == TypeInt && r_operand.type == TypeFloat) ||
             (l_operand.type == TypeFloat && r_operand.type == TypeFloat)){
 
+    if(l_operand.type == TypeInt)
+        generate_operation_retype_sec_int2float();
+    else if(r_operand.type == TypeInt)
+        generate_operation_retype_first_int2float();
+
     // If variable is NULL, then the expression is part of if or while statement
     if((!variable) && (operator == TypeEquality || operator == TypeUnEquality || operator == TypeGreater ||
         operator == TypeGreaterEq || operator == TypeLesser || operator == TypeLesserEq || operator == TypeNegation)){
+      generate_operation(operator); //generator
       id_s_pop();
       return NO_ERROR;
     }
@@ -649,6 +662,7 @@ int check_operators_and_operands_syntax(Type operator, int fction_switch){
       }
 
     }
+    generate_operation(operator); //generator
   }
   else if (l_operand.type == TypeString && r_operand.type == TypeString){
     if (operator != TypeOperatorPlus) {
@@ -669,11 +683,13 @@ int check_operators_and_operands_syntax(Type operator, int fction_switch){
     else {
       param_type = TypeString;
     }
-
+    generate_operation_concat();
   } // If for TypeUnspecified that comes out of function PARAMETERS
-  else if (((l_operand.type == TypeUnspecified) && (r_operand.type == TypeUnspecified || r_operand.type == TypeInt ||
-    r_operand.type == TypeFloat || r_operand.type == TypeString)) || ((r_operand.type == TypeUnspecified || r_operand.type == TypeInt ||
-    r_operand.type == TypeFloat || r_operand.type == TypeString) && (r_operand.type == TypeUnspecified))) {
+  else if (((l_operand.type == TypeUnspecified) && (r_operand.type == TypeInt ||
+    r_operand.type == TypeFloat || r_operand.type == TypeString))
+    ||
+    ((l_operand.type == TypeInt ||
+    l_operand.type == TypeFloat || l_operand.type == TypeString) && (r_operand.type == TypeUnspecified))) {
 
     if (fction_switch != 1){
       if (variable) {
@@ -688,7 +704,12 @@ int check_operators_and_operands_syntax(Type operator, int fction_switch){
     else {
       param_type = TypeUnspecified;
     }
-
+    //generate_operation(operator); //generator
+    generate_operation_unspecified("control", operator); //generator TODO
+  }
+  else if(r_operand.type == TypeUnspecified && l_operand.type == TypeUnspecified)
+  {
+      generate_operation_unspecified("control", operator); //generator
   }
   else {
     DEBUG_PRINT("SYNTAX ERROR: Incorrect operator or operand.\n");

@@ -6,12 +6,14 @@
 
 //GLOBALS
 String code = {};
+String fnc = {};
+bool inside_fnc = true;
 /////////
 
 #define MAX_DIGITS_DOUBLE 50
 
 #define ADD_CODE(str) \
-	str_push(&code, (str))
+	(inside_fnc ? str_push(&fnc, (str)) : str_push(&code, (str)))
 
 #define ADD_LINE(line) \
 	ADD_CODE(line "\n")
@@ -24,6 +26,7 @@ static inline bool generate_header()
 		ADD_LINE(".IFJcode19") &&
 		ADD_LINE("DEFVAR GF@%fnc_return") &&
 		ADD_LINE("DEFVAR GF@%exp_result") &&
+		ADD_LINE("DEFVAR GF@%exp_result%type") &&
 		ADD_LINE("DEFVAR GF@%stmp1") &&
 		ADD_LINE("DEFVAR GF@%stmp2") &&
 		ADD_LINE("DEFVAR GF@%stmp1%type") &&
@@ -66,7 +69,7 @@ static inline bool generate_var_value(Type type, void* data)
 			case TypeFloat:
 				if(data)
 				{
-					ret = sprintf(tmp.content, "%g", *(double*)data) > 0 &&
+					ret = sprintf(tmp.content, "%a", *(double*)data) > 0 &&
 						ADD_CODE("float@") && ADD_CODE(tmp.content);
 				}
 				else
@@ -119,6 +122,7 @@ bool generator_init()
 {
 	return
 		str_init(&code) &&
+		str_init(&fnc) &&
 		generate_header() &&
 		generate_predefined_functions();
 }
@@ -130,7 +134,8 @@ void generator_free()
 
 char *generator_code_get()
 {
-	return code.content;
+	str_push(&fnc, code.content);
+	return fnc.content;
 }
 
 void generator_code_clear()
@@ -140,6 +145,7 @@ void generator_code_clear()
 
 bool generate_main_begin()
 {
+	inside_fnc = false;
 	return
 		ADD_LINE("\n# Main scope BEGIN") &&
 		ADD_LINE("LABEL $$main") &&
@@ -157,7 +163,7 @@ bool generate_main_end()
 bool generate_var_declaration(char* label, bool scope)
 {
 	return
-		scope ? ADD_CODE("DEFVAR GF@") : ADD_CODE("DEFVAR LF@") &&
+		(scope ? ADD_CODE("DEFVAR GF@") : ADD_CODE("DEFVAR LF@")) &&
 		ADD_CODE(label) &&
 		ADD_CODE("\n");
 }
@@ -165,7 +171,7 @@ bool generate_var_declaration(char* label, bool scope)
 bool generate_var_definition(char* label, bool scope, Type type, void* data)
 {
 	return
-		scope ? ADD_CODE("MOVE GF@") : ADD_CODE("MOVE LF@") &&
+		(scope ? ADD_CODE("MOVE GF@") : ADD_CODE("MOVE LF@")) &&
 		ADD_CODE(label) &&
 		ADD_CODE(" ") &&
 		generate_var_value(type, data) &&
@@ -180,7 +186,7 @@ bool generate_push_data(Type type, void* data)
 bool generate_push_var(char* label, bool scope)
 {
 	return
-		scope ? ADD_CODE("PUSHS GF@") : ADD_CODE("PUSHS LF@") && ADD_CODE(label) && ADD_CODE("\n");
+		(scope ? ADD_CODE("PUSHS GF@") : ADD_CODE("PUSHS LF@")) && ADD_CODE(label) && ADD_CODE("\n");
 }
 bool generate_push_var_unspecified(char* label, char* var_label, bool scope, Type type)
 {
@@ -189,38 +195,38 @@ bool generate_push_var_unspecified(char* label, char* var_label, bool scope, Typ
 	{
 		case TypeString:
 			ret =
-			ADD_CODE("TYPE GF@%stmp1%type ") && scope ? ADD_CODE("GF@") : ADD_CODE("LF@") && ADD_CODE(var_label) && ADD_CODE("\n") &&
+			ADD_CODE("TYPE GF@%stmp1%type ") && (scope ? ADD_CODE("GF@") : ADD_CODE("LF@")) && ADD_CODE(var_label) && ADD_CODE("\n") &&
 			ADD_CODE("JUMPIFEQ $") && ADD_CODE(label) && ADD_CODE("%") && ADD_CODE("string GF@%stmp1%type string@string\n") &&
 			ADD_CODE("EXIT int@") && ADD_CODE(STR(ERROR_SEMANTIC_RUNTIME)) && ADD_CODE("\n") &&
 			ADD_CODE("LABEL $") && ADD_CODE(label) && ADD_CODE("%") && ADD_CODE("string\n") &&
-			ADD_CODE("PUSHS ") && scope ? ADD_CODE("GF@") : ADD_CODE("LF@") && ADD_CODE(var_label) && ADD_CODE("\n");
+			ADD_CODE("PUSHS ") && (scope ? ADD_CODE("GF@") : ADD_CODE("LF@")) && ADD_CODE(var_label) && ADD_CODE("\n");
 			break;
 		case TypeInt:
 			ret =
-			ADD_CODE("TYPE GF@%stmp1%type ") && scope ? ADD_CODE("GF@") : ADD_CODE("LF@") && ADD_CODE(var_label) && ADD_CODE("\n") &&
+			ADD_CODE("TYPE GF@%stmp1%type ") && (scope ? ADD_CODE("GF@") : ADD_CODE("LF@")) && ADD_CODE(var_label) && ADD_CODE("\n") &&
 			ADD_CODE("JUMPIFEQ $") && ADD_CODE(label) && ADD_CODE("%") && ADD_CODE("int GF@%stmp1%type string@int\n") &&
 			ADD_CODE("JUMPIFEQ $") && ADD_CODE(label) && ADD_CODE("%") && ADD_CODE("float GF@%stmp1%type string@float\n") &&
 			ADD_CODE("EXIT int@") && ADD_CODE(STR(ERROR_SEMANTIC_RUNTIME)) && ADD_CODE("\n") &&
 			ADD_CODE("LABEL $") && ADD_CODE(label) && ADD_CODE("%") && ADD_CODE("float\n") &&
-			ADD_CODE("PUSHS ") && scope ? ADD_CODE("GF@") : ADD_CODE("LF@") && ADD_CODE(var_label) && ADD_CODE("\n") &&
+			ADD_CODE("PUSHS ") && (scope ? ADD_CODE("GF@") : ADD_CODE("LF@")) && ADD_CODE(var_label) && ADD_CODE("\n") &&
 			ADD_LINE("FLOAT2INTS") &&
 			ADD_CODE("JUMP $") && ADD_CODE(label) && ADD_CODE("%") && ADD_CODE("end\n") &&
 			ADD_CODE("LABEL $") && ADD_CODE(label) && ADD_CODE("%") && ADD_CODE("int\n") &&
-			ADD_CODE("PUSHS ") && scope ? ADD_CODE("GF@") : ADD_CODE("LF@") && ADD_CODE(var_label) && ADD_CODE("\n") &&
+			ADD_CODE("PUSHS ") && (scope ? ADD_CODE("GF@") : ADD_CODE("LF@")) && ADD_CODE(var_label) && ADD_CODE("\n") &&
 			ADD_CODE("LABEL $") && ADD_CODE(label) && ADD_CODE("%") && ADD_CODE("end\n");
 			break;
 		case TypeFloat:
 			ret =
-			ADD_CODE("TYPE GF@%stmp1%type ") && scope ? ADD_CODE("GF@") : ADD_CODE("LF@") && ADD_CODE(var_label) && ADD_CODE("\n") &&
+			ADD_CODE("TYPE GF@%stmp1%type ") && (scope ? ADD_CODE("GF@") : ADD_CODE("LF@")) && ADD_CODE(var_label) && ADD_CODE("\n") &&
 			ADD_CODE("JUMPIFEQ $") && ADD_CODE(label) && ADD_CODE("%") && ADD_CODE("int GF@%stmp1%type string@int\n") &&
 			ADD_CODE("JUMPIFEQ $") && ADD_CODE(label) && ADD_CODE("%") && ADD_CODE("float GF@%stmp1%type string@float\n") &&
 			ADD_CODE("EXIT int@") && ADD_CODE(STR(ERROR_SEMANTIC_RUNTIME)) && ADD_CODE("\n") &&
 			ADD_CODE("LABEL $") && ADD_CODE(label) && ADD_CODE("%") && ADD_CODE("int\n") &&
-			ADD_CODE("PUSHS ") && scope ? ADD_CODE("GF@") : ADD_CODE("LF@") && ADD_CODE(var_label) && ADD_CODE("\n") &&
+			ADD_CODE("PUSHS ") && (scope ? ADD_CODE("GF@") : ADD_CODE("LF@")) && ADD_CODE(var_label) && ADD_CODE("\n") &&
 			ADD_LINE("INT2FLOATS") &&
 			ADD_CODE("JUMP $") && ADD_CODE(label) && ADD_CODE("%") && ADD_CODE("end\n") &&
 			ADD_CODE("LABEL $") && ADD_CODE(label) && ADD_CODE("%") && ADD_CODE("float\n") &&
-			ADD_CODE("PUSHS ") && scope ? ADD_CODE("GF@") : ADD_CODE("LF@") && ADD_CODE(var_label) && ADD_CODE("\n") &&
+			ADD_CODE("PUSHS ") && (scope ? ADD_CODE("GF@") : ADD_CODE("LF@")) && ADD_CODE(var_label) && ADD_CODE("\n") &&
 			ADD_CODE("LABEL $") && ADD_CODE(label) && ADD_CODE("%") && ADD_CODE("end\n");
 			break;
 		default:
@@ -437,7 +443,7 @@ bool generate_operation_retype_sec_float2int()
 bool generate_pop_var(char* label, bool scope)
 {
 	return
-		scope ? ADD_CODE("POPS GF@") : ADD_CODE("POPS LF@") && ADD_CODE(label) && ADD_CODE("\n");
+		(scope ? ADD_CODE("POPS GF@") : ADD_CODE("POPS LF@")) && ADD_CODE(label) && ADD_CODE("\n");
 }
 
 bool generate_pop_exp()
@@ -446,11 +452,37 @@ bool generate_pop_exp()
 		ADD_LINE("POPS GF@%exp_result");
 }
 
+bool generate_pop_return()
+{
+	return
+		ADD_LINE("POPS LF@%retval");
+}
+
 bool generate_if_begin(char* label, unsigned index)
 {
 	char tmp[MAX_DIGITS_DOUBLE];
 	return get_str_from_index(tmp, index) &&
 		ADD_LINE("# If BEGIN") &&
+		ADD_LINE("TYPE GF@%exp_result%type GF@%exp_result") &&
+		ADD_CODE("JUMPIFEQ $") && ADD_CODE(label) && ADD_CODE("%begin GF@%exp_result%type string@bool\n") &&
+		ADD_CODE("JUMPIFEQ $") && ADD_CODE(label) && ADD_CODE("%int GF@%exp_result%type string@int\n") &&
+		ADD_CODE("JUMPIFEQ $") && ADD_CODE(label) && ADD_CODE("%float GF@%exp_result%type string@float\n") &&
+		ADD_CODE("JUMPIFEQ $") && ADD_CODE(label) && ADD_CODE("%string GF@%exp_result%type string@string\n") &&
+		ADD_CODE("EXIT int@") && ADD_CODE(STR(ERROR_SEMANTIC_RUNTIME)) && ADD_CODE("\n") &&//nil
+
+		ADD_CODE("LABEL $") && ADD_CODE(label) && ADD_CODE("%string\n") &&
+		ADD_LINE("STRLEN GF@%exp_result GF@%exp_result") &&
+
+		ADD_CODE("LABEL $") && ADD_CODE(label) && ADD_CODE("%int\n") &&
+		ADD_LINE("EQ GF@%exp_result GF@%exp_result int@0") &&
+		ADD_LINE("NOT GF@%exp_result GF@%exp_result") &&
+		ADD_CODE("JUMP $") && ADD_CODE(label) && ADD_CODE("%begin\n") &&
+
+		ADD_CODE("LABEL $") && ADD_CODE(label) && ADD_CODE("%float\n") &&
+		ADD_LINE("EQ GF@%exp_result GF@%exp_result float@0.0") &&
+		ADD_LINE("NOT GF@%exp_result GF@%exp_result") &&
+
+		ADD_CODE("LABEL $") && ADD_CODE(label) && ADD_CODE("%begin\n") &&
 		ADD_CODE("JUMPIFEQ $") && ADD_CODE(label) && ADD_CODE("%") && ADD_CODE(tmp) &&  ADD_CODE(" GF@%exp_result bool@false\n");
 }
 bool generate_else(char* label, unsigned index)
@@ -477,6 +509,26 @@ bool generate_while_begin(char* label)
 bool generate_while_loop(char* label)
 {
 	return
+		ADD_LINE("TYPE GF@%exp_result%type GF@%exp_result") &&
+		ADD_CODE("JUMPIFEQ $") && ADD_CODE(label) && ADD_CODE("%loop GF@%exp_result%type string@bool\n") &&
+		ADD_CODE("JUMPIFEQ $") && ADD_CODE(label) && ADD_CODE("%int GF@%exp_result%type string@int\n") &&
+		ADD_CODE("JUMPIFEQ $") && ADD_CODE(label) && ADD_CODE("%float GF@%exp_result%type string@float\n") &&
+		ADD_CODE("JUMPIFEQ $") && ADD_CODE(label) && ADD_CODE("%string GF@%exp_result%type string@string\n") &&
+		ADD_CODE("EXIT int@") && ADD_CODE(STR(ERROR_SEMANTIC_RUNTIME)) && ADD_CODE("\n") &&//nil
+
+		ADD_CODE("LABEL $") && ADD_CODE(label) && ADD_CODE("%string\n") &&
+		ADD_LINE("STRLEN GF@%exp_result GF@%exp_result") &&
+
+		ADD_CODE("LABEL $") && ADD_CODE(label) && ADD_CODE("%int\n") &&
+		ADD_LINE("EQ GF@%exp_result GF@%exp_result int@0") &&
+		ADD_LINE("NOT GF@%exp_result GF@%exp_result") &&
+		ADD_CODE("JUMP $") && ADD_CODE(label) && ADD_CODE("%loop\n") &&
+
+		ADD_CODE("LABEL $") && ADD_CODE(label) && ADD_CODE("%float\n") &&
+		ADD_LINE("EQ GF@%exp_result GF@%exp_result float@0.0") &&
+		ADD_LINE("NOT GF@%exp_result GF@%exp_result") &&
+
+		ADD_CODE("LABEL $") && ADD_CODE(label) && ADD_CODE("%loop\n") &&
 		ADD_CODE("JUMPIFEQ $") && ADD_CODE(label) && ADD_CODE("%end") && ADD_CODE(" GF@%exp_result bool@false\n");
 }
 bool generate_while_end(char* label)
@@ -489,6 +541,7 @@ bool generate_while_end(char* label)
 
 bool generate_fnc_begin(char* label)
 {
+	inside_fnc = true;
 	return
 		ADD_CODE("\n# Function ") && ADD_CODE(label) && ADD_CODE(" BEGIN\n") &&
 		ADD_CODE("LABEL $") && ADD_CODE(label) && ADD_CODE("\n") &&
@@ -513,16 +566,18 @@ bool generate_fnc_return_set_data(Type type, void* data)
 bool generate_fnc_return_set_var(char* label, bool scope)
 {
 	return
-		scope ? ADD_CODE("MOVE LF@%retval GF@") : ADD_CODE("MOVE LF@%retval LF@") && ADD_CODE(label) && ADD_CODE("\n");
+		(scope ? ADD_CODE("MOVE LF@%retval GF@") : ADD_CODE("MOVE LF@%retval LF@")) && ADD_CODE(label) && ADD_CODE("\n");
 }
 
 bool generate_fnc_end(char* label)
 {
-	return
+	bool ret =
 		ADD_CODE("LABEL $") && ADD_CODE(label) && ADD_CODE("%return\n") &&
 		ADD_LINE("POPFRAME") &&
 		ADD_LINE("RETURN") &&
 		ADD_CODE("# Function ") && ADD_CODE(label) && ADD_CODE(" END\n");
+	inside_fnc = false;
+	return ret;
 }
 
 bool generate_fnc_pre_param()
@@ -542,7 +597,7 @@ bool generate_fnc_param_set_var(char* label, bool scope, unsigned index)
 	char tmp[MAX_DIGITS_DOUBLE];
 	return get_str_from_index(tmp, index) &&
 		ADD_CODE("DEFVAR TF@%") && ADD_CODE(tmp) && ADD_CODE("\n") &&
-		ADD_CODE("MOVE TF@%") && ADD_CODE(tmp) && scope ? ADD_CODE(" GF@") : ADD_CODE(" LF@") && ADD_CODE(label) && ADD_CODE("\n");
+		ADD_CODE("MOVE TF@%") && ADD_CODE(tmp) && (scope ? ADD_CODE(" GF@") : ADD_CODE(" LF@")) && ADD_CODE(label) && ADD_CODE("\n");
 }
 bool generate_fnc_call(char* label)
 {
@@ -554,5 +609,5 @@ bool generate_fnc_call(char* label)
 bool generate_fnc_return_get(char* label, bool scope)
 {
 	return
-		scope ? ADD_CODE("MOVE GF@") : ADD_CODE("MOVE LF@") && ADD_CODE(label) && ADD_CODE(" GF@%fnc_return\n");
+		(scope ? ADD_CODE("MOVE GF@") : ADD_CODE("MOVE LF@")) && ADD_CODE(label) && ADD_CODE(" GF@%fnc_return\n");
 }

@@ -47,6 +47,8 @@ bool generate_operation_retype_sec_float2int();
 bool generate_pop_var(char* label, bool scope);
 // Pops result for if and while condition
 bool generate_pop_exp();
+// Pops result to return value
+bool generate_pop_return();
 
 // If not true jumps on index
 bool generate_if_begin(char* label, unsigned index);

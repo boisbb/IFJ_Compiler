@@ -18,7 +18,7 @@ if [ "$#" == 2 ]; then
 
   #./ifj_compiler < "$1" >final.out
 
-  ./ic19int final.out > result #vstupní souboru asi nějak předat
+  ./ic19int final.out <"$2" > result #vstupní souboru asi nějak předat
 
   echo "start diffu -->"
   #diff result test.out

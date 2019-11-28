@@ -55,12 +55,15 @@ int fction_call(Token *token, hSymtab *act_table){
   if (tmp_item_func) {
     if (tmp_item_func->item_type == IT_FUNC) {
 
+      generate_fnc_pre_param();
+
       hSymtab_Func_Param *tmp_params = ((hSymtab_Func*)tmp_item_func->data)->params;
-      int act_parameters_cnt = symtab_num_of_fction_params(tmp_params);
+      //int act_parameters_cnt = symtab_num_of_fction_params(tmp_params);
       if (!tmp_params) {
         if (GET_TOKEN_CHECK_EOF(token) && TOKEN_TYPE_NEEDED_CHECK(token->type, TypeRightBracket)) {
 
           //generete if there are no params
+          generate_fnc_call(tmp_item_func->hKey);
           return NO_ERROR;
         }
       }
@@ -68,6 +71,7 @@ int fction_call(Token *token, hSymtab *act_table){
         if (GET_TOKEN_CHECK_EOF(token)) {
           return ERROR_SYNTAX;
         }
+        bool var_flag = false;
         while (1){
           //printf("%s\n", operNames[token->type]);
           if (token->type == TypeComma) {
@@ -85,6 +89,8 @@ int fction_call(Token *token, hSymtab *act_table){
               if(symtab_it_position((char*)token->data, act_table)){
                 if (symtab_it_position((char*)token->data, act_table)->item_type == IT_VAR) {
                   token->type = ((hSymtab_Var*)symtab_it_position((char*)token->data, act_table)->data)->type;
+                  prev = TypeVariable;
+                  var_flag = true;
                 }
                 else {
                   return ERROR_SYNTAX;
@@ -98,7 +104,13 @@ int fction_call(Token *token, hSymtab *act_table){
             if (tmp_params->param_type == TypeUnspecified) {
 
               if (token->type == TypeString || token->type == TypeFloat || token->type == TypeInt || token->type == TypeUnspecified) {
-                prev = token->type;
+                  if(!var_flag)
+                    prev = token->type;
+
+                    if(var_flag)
+                        generate_fnc_param_set_var(token->data, ((hSymtab_Var*)symtab_it_position((char*)token->data, act_table)->data)->global, param_cntr);
+                    else
+                        generate_fnc_param_set_data(token->type, token->data, param_cntr);
 
                 if (GET_TOKEN_CHECK_EOF(token)) {
                   return ERROR_SYNTAX;
@@ -110,6 +122,7 @@ int fction_call(Token *token, hSymtab *act_table){
                   else {
 
                     // generate code
+                    generate_fnc_call(tmp_item_func->hKey);
                     return NO_ERROR;
                   }
                 }
@@ -130,8 +143,13 @@ int fction_call(Token *token, hSymtab *act_table){
                 return ERROR_SEMANTIC;
               }
               else {
+                  if(!var_flag)
+                    prev = token->type;
 
-                prev = token->type;
+                    if(var_flag)
+                        generate_fnc_param_set_var(token->data, ((hSymtab_Var*)symtab_it_position((char*)token->data, act_table)->data)->global, param_cntr);
+                    else
+                        generate_fnc_param_set_data(token->type, token->data, param_cntr);
 
                 if (GET_TOKEN_CHECK_EOF(token)) {
                   return ERROR_SYNTAX;
@@ -144,6 +162,7 @@ int fction_call(Token *token, hSymtab *act_table){
                   else {
 
                     //last parameter
+                    generate_fnc_call(tmp_item_func->hKey);
                     return NO_ERROR;
                   }
                 }
@@ -279,7 +298,7 @@ int assignment(Token *var, Token *value, hSymtab *act_table, int in_function){
 
             err = fction_call(value, act_table);
 
-            //Generate code? - Boris
+            generate_fnc_return_get(var->data, global);
 
             if (GET_TOKEN_CHECK_EOF(value) || !TOKEN_TYPE_NEEDED_CHECK(value->type, TypeNewLine)){
               return ERROR_SYNTAX;
@@ -779,7 +798,7 @@ int prog() {
   symtab_add_predef_func(table);
 
   //proc to bylo driv tak slozite?
-  //generate_main_begin();
+  generate_main_begin();
   body(&token, table);
 
   generate_fnc_pre_param();
@@ -791,7 +810,7 @@ int prog() {
   generate_main_end();
 
   //char * str =generator_code_get();
-  //printf("%s\n", str);
+  printf("%s\n", generator_code_get());
 
 /*
   free_symtab(table);

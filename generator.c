@@ -129,6 +129,7 @@ bool generator_init()
 
 void generator_free()
 {
+	str_free(&fnc);
 	str_free(&code);
 }
 

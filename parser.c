@@ -928,7 +928,7 @@ int prog() {
 
   //printf("%s\n", fct_predef_stack.top->prev->fct_name);
 
-  //err = sym_stack_pop_all(fct_predef_stack.top, table);
+  err = sym_stack_pop_all(fct_predef_stack.top, table);
 
   generate_fnc_pre_param();
   generate_push_var("vys", 1);

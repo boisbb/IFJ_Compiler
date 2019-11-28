@@ -68,10 +68,8 @@ int fction_call(Token *token, hSymtab *act_table){
         if (GET_TOKEN_CHECK_EOF(token)) {
           return ERROR_SYNTAX;
         }
-
-
         while (1){
-
+          //printf("%s\n", operNames[token->type]);
           if (token->type == TypeComma) {
             if (prev == TypeComma) {
               return ERROR_SYNTAX;
@@ -83,6 +81,20 @@ int fction_call(Token *token, hSymtab *act_table){
             }
           }
           else {
+            if (token->type == TypeVariable) {
+              if(symtab_it_position((char*)token->data, act_table)){
+                if (symtab_it_position((char*)token->data, act_table)->item_type == IT_VAR) {
+                  token->type = ((hSymtab_Var*)symtab_it_position((char*)token->data, act_table)->data)->type;
+                }
+                else {
+                  return ERROR_SYNTAX;
+                }
+              }
+              else {
+                return ERROR_SEMANTIC;
+              }
+            }
+
             if (tmp_params->param_type == TypeUnspecified) {
 
               if (token->type == TypeString || token->type == TypeFloat || token->type == TypeInt || token->type == TypeUnspecified) {
@@ -91,7 +103,6 @@ int fction_call(Token *token, hSymtab *act_table){
                 if (GET_TOKEN_CHECK_EOF(token)) {
                   return ERROR_SYNTAX;
                 }
-
                 if (!tmp_params->next) {
                   if (token->type != TypeRightBracket) {
                     return ERROR_SEMANTIC;
@@ -190,7 +201,6 @@ int statement(Token *token, hSymtab *act_table){
 
   if (TOKEN_TYPE_NEEDED_CHECK(token->type, TypeInt) || TOKEN_TYPE_NEEDED_CHECK(token->type, TypeFloat) || TOKEN_TYPE_NEEDED_CHECK(token->type, TypeString) ||
       TOKEN_TYPE_NEEDED_CHECK(token->type, TypeVariable)) {
-    printf("a\n");
     err = expression(NULL, token, NULL, act_table);
 
     if (!TOKEN_TYPE_NEEDED_CHECK(token->type, TypeColon)) {
@@ -245,25 +255,40 @@ int assignment(Token *var, Token *value, hSymtab *act_table, int in_function){
   bool global = true;
     if (!symtab_it_position((char*)var->data, act_table))
     {
-        /* ERROR SEG FAULT */
-            if (symtab_it_position((char*)value->data, act_table)->item_type == IT_FUNC) {
-              Token bracket;
-
-              if (GET_TOKEN_CHECK_EOF(&bracket) || !TOKEN_TYPE_NEEDED_CHECK(bracket.type, TypeLeftBracket)){
-                return ERROR_SYNTAX;
-              }
-                err = fction_call(value, act_table);
-                return err;
-            }
-            symtab_add_it(act_table, var);
-            ((hSymtab_Var*)((*act_table)[symtab_hash_function((char*)var->data)]->data))->global = true;
-            generate_var_declaration((char*)var->data, !in_function);
-            if(in_function)
-                global = false;
+      symtab_add_it(act_table, var);
+      ((hSymtab_Var*)((*act_table)[symtab_hash_function((char*)var->data)]->data))->global = true;
+      generate_var_declaration((char*)var->data, !in_function);
+      if(in_function)
+          global = false;
     }
     else
     {
         global = ((hSymtab_Var*)((*act_table)[symtab_hash_function((char*)var->data)]->data))->global;
+    }
+
+    if (value->type == TypeVariable) {
+      /* ERROR SEG FAULT */
+
+      if (symtab_it_position((char*)value->data, act_table)) {
+        if (symtab_it_position((char*)value->data, act_table)->item_type == IT_FUNC) {
+          Token bracket;
+
+          if (GET_TOKEN_CHECK_EOF(&bracket) || !TOKEN_TYPE_NEEDED_CHECK(bracket.type, TypeLeftBracket)){
+            return ERROR_SYNTAX;
+          }
+
+            err = fction_call(value, act_table);
+
+            //Generate code? - Boris
+
+            if (GET_TOKEN_CHECK_EOF(value) || !TOKEN_TYPE_NEEDED_CHECK(value->type, TypeNewLine)){
+              return ERROR_SYNTAX;
+            }
+
+
+            return err;
+        }
+      }
     }
 
 
@@ -311,7 +336,6 @@ int command(Token *token, hSymtab *act_table, int in_function, int statement_swi
 
       // funguje pouze s globalni tabulkou // TODO
       err = fction_call(token, act_table);
-
       return err;
     }
     else {
@@ -372,6 +396,7 @@ int body(Token *token, hSymtab *act_table){
   while (1) {
       if (err == NO_ERROR) {
         err = command(token, act_table, 0, 0);
+
         if (err == ERROR_SYNTAX || err == ERROR_SEMANTIC) {
           DEBUG_PRINT("Error occured, parsing ended.\n");
           return err;
@@ -754,7 +779,7 @@ int prog() {
   symtab_add_predef_func(table);
 
   //proc to bylo driv tak slozite?
-  generate_main_begin();
+  //generate_main_begin();
   body(&token, table);
 
   generate_fnc_pre_param();
@@ -765,7 +790,7 @@ int prog() {
 
   generate_main_end();
 
-  char * str =generator_code_get();
+  //char * str =generator_code_get();
   //printf("%s\n", str);
 
 /*

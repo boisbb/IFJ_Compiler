@@ -26,6 +26,7 @@ typedef struct fct_param {
 typedef struct symIt_Func {
   bool defined;
   hSymtab_Func_Param *params;
+  int paramNum;
   Type return_type;
 } hSymtab_Func;
 
@@ -41,6 +42,27 @@ typedef struct symtab_it {
   void *data;
   struct symtab_it *next;
 } hSymtab_it;
+
+ //__________________STACK____________
+typedef struct fct_def_node {
+  char *fct_name;
+  int param_num;
+  struct fct_def_node *prev;
+  struct fct_def_node *next;
+} hSym_fct_node;
+
+
+typedef struct fct_def_stack {
+  struct fct_def_node *top;
+} hSym_fct_stack;
+
+typedef hSymtab_it *hSymtab[HTAB_PRIME];
+
+int sym_stack_init(hSym_fct_stack* f_stack);
+
+hSym_fct_node *sym_stack_push(hSym_fct_node* f_top, char *name);
+
+int sym_stack_pop_all(hSym_fct_node* f_top, hSymtab* act_table);
 
 typedef hSymtab_it *hSymtab[HTAB_PRIME];
 

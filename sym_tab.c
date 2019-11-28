@@ -110,6 +110,7 @@ void symtab_add_it(hSymtab *sym_tab, Token *token){
       (*sym_tab)[hash]->item_type = IT_FUNC;
       ((hSymtab_Func*)((*sym_tab)[hash]->data))->defined = false;
       ((hSymtab_Func*)((*sym_tab)[hash]->data))->params = NULL;
+      ((hSymtab_Func*)((*sym_tab)[hash]->data))->paramNum = 0;
       ((hSymtab_Func*)((*sym_tab)[hash]->data))->return_type = TypeUndefined;
       break;
 
@@ -205,6 +206,7 @@ void symtab_add_predef_func(hSymtab *table){
 
   ((hSymtab_Func*)((*table)[symtab_hash_function((char*)tok_fc.data)]->data))->params->param_type = TypeString;
   ((hSymtab_Func*)((*table)[symtab_hash_function((char*)tok_fc.data)]->data))->params->paramName = NULL;
+  ((hSymtab_Func*)((*table)[symtab_hash_function((char*)tok_fc.data)]->data))->paramNum = 1;
   ((hSymtab_Func*)((*table)[symtab_hash_function((char*)tok_fc.data)]->data))->return_type = TypeInt;
   //free(tok_fc.data);
   //
@@ -223,6 +225,7 @@ void symtab_add_predef_func(hSymtab *table){
 
   ((hSymtab_Func*)((*table)[symtab_hash_function((char*)tok_fc.data)]->data))->params->param_type = TypeString;
   ((hSymtab_Func*)((*table)[symtab_hash_function((char*)tok_fc.data)]->data))->params->paramName = NULL;
+  ((hSymtab_Func*)((*table)[symtab_hash_function((char*)tok_fc.data)]->data))->paramNum = 3;
   ((hSymtab_Func*)((*table)[symtab_hash_function((char*)tok_fc.data)]->data))->return_type = TypeString;
   hSymtab_Func_Param *f_param = ((hSymtab_Func*)((*table)[symtab_hash_function((char*)tok_fc.data)]->data))->params;
 
@@ -249,6 +252,7 @@ void symtab_add_predef_func(hSymtab *table){
 
   ((hSymtab_Func*)((*table)[symtab_hash_function((char*)tok_fc.data)]->data))->params->param_type = TypeString;
   ((hSymtab_Func*)((*table)[symtab_hash_function((char*)tok_fc.data)]->data))->params->paramName = NULL;
+  ((hSymtab_Func*)((*table)[symtab_hash_function((char*)tok_fc.data)]->data))->paramNum = 2;
   ((hSymtab_Func*)((*table)[symtab_hash_function((char*)tok_fc.data)]->data))->return_type = TypeInt;
   f_param = ((hSymtab_Func*)((*table)[symtab_hash_function((char*)tok_fc.data)]->data))->params;
 
@@ -262,8 +266,6 @@ void symtab_add_predef_func(hSymtab *table){
   //
 
   // chr(int) //
-  //if (!(tok_fc.data = malloc(sizeof(char) * (strlen("chr") + 1)))){DEBUG_PRINT("Failed to allocate memory for function.\n"); return;}
-  //strcpy((char*)tok_fc.data, "chr");
   tok_fc.data = "chr";
   tok_fc.type = TypeFunc;
   symtab_add_it(table, &tok_fc);
@@ -275,6 +277,7 @@ void symtab_add_predef_func(hSymtab *table){
 
   ((hSymtab_Func*)((*table)[symtab_hash_function((char*)tok_fc.data)]->data))->params->param_type = TypeInt;
   ((hSymtab_Func*)((*table)[symtab_hash_function((char*)tok_fc.data)]->data))->params->paramName = NULL;
+  ((hSymtab_Func*)((*table)[symtab_hash_function((char*)tok_fc.data)]->data))->paramNum = 1;
   ((hSymtab_Func*)((*table)[symtab_hash_function((char*)tok_fc.data)]->data))->return_type = TypeString;
   //free(tok_fc.data);
   //
@@ -337,4 +340,75 @@ void free_symtab(hSymtab *table, int switch_local){
       }
     }
   }
+}
+
+
+
+int sym_stack_init(hSym_fct_stack* f_stack){
+  f_stack = NULL;
+}
+
+hSym_fct_node *sym_stack_push(hSym_fct_node* f_top, char *name){
+  if (f_top->fct_name == NULL) {
+    //printf("a\n");
+      //printf("a\n");
+      f_top->fct_name = name;
+      f_top->param_num = 0;
+      f_top->next = NULL;
+      f_top->prev = NULL;
+      return;
+  }
+  printf("a\n");
+  if (!(f_top->next = malloc(sizeof(hSym_fct_node))) /*|| !(stack.top->next->prev = malloc(sizeof(TermStackIt)))*/) {
+    DEBUG_PRINT("INTERNAL ERROR: Memory allocation failed.\n");
+    return ERROR_INTERNAL;
+  }
+
+  f_top->next->prev = f_top;
+  f_top->next->fct_name = name;
+  f_top->next->param_num = 0;
+  f_top->next->next = NULL;
+  f_top = f_top->next;
+  return f_top;
+  //printf("%s\n", f_top->fct_name);
+
+  return NO_ERROR;
+
+}
+
+int sym_stack_pop_all(hSym_fct_node* f_top, hSymtab* act_table){
+  if (!f_top->fct_name) {
+    return NO_ERROR;
+  }
+
+  hSym_fct_node* tmp_top = f_top;
+  hSym_fct_node* swp;
+  hSymtab_it* fction_item;
+  while (tmp_top) {
+    fction_item = symtab_it_position(tmp_top->fct_name, act_table);
+    if (!fction_item) {
+      DEBUG_PRINT("Semantic Error: function %s was not defined.\n", tmp_top->fct_name);
+      return ERROR_SEMANTIC;
+    }
+    else{
+      if (fction_item->item_type == IT_FUNC) {
+        if (((hSymtab_Func*)fction_item->data)->paramNum == tmp_top->param_num){
+          swp = tmp_top->prev;
+          free(tmp_top->fct_name);
+          free(tmp_top);
+          tmp_top = swp;
+        }
+        else {
+          DEBUG_PRINT("Semantic Error: function %s was not defined.\n", tmp_top->fct_name);
+          return ERROR_SEMANTIC;
+        }
+      }
+      else {
+        DEBUG_PRINT("Semantic Error: function %s was not defined.\n", tmp_top->fct_name);
+        return ERROR_SEMANTIC;
+      }
+    }
+  }
+
+  return NO_ERROR;
 }

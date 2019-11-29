@@ -16,15 +16,16 @@ if [ "$#" == 2 ]; then
   cat ./ifj19.py "$1" > testPrg.py
   python3 testPrg.py < "$2" > test.out #výsledek pythonu
 
-  #./ifj_compiler < "$1" >final.out
+  ./main < "$1" >final.out
 
+  echo "interpret -->"
   ./ic19int final.out <"$2" > result #vstupní souboru asi nějak předat
 
   echo "start diffu -->"
-  #diff result test.out
+  diff result test.out
   echo "<-- konec diffu"
 
-  #rm final.out test.out result
+  rm test.out result final.out
 
   exit
 fi
@@ -33,16 +34,17 @@ if [ "$#" == 1 ]; then
   cat ./ifj19.py "$1" > testPrg.py
   python3 testPrg.py > test.out #výsledek pythonu
 
-  #./ifj_compiler < "$1" >final.out
+  ./main < "$1" >final.out
+  echo "interpret -->"
 
   ./ic19int final.out > result
 
 
   echo "start diffu -->"
-  #diff result test.out
+  diff result test.out
   echo "<-- konec diffu"
 
-  #rm final.out test.out result
+  rm  test.out result final.out
 
   exit
 fi

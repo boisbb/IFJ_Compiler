@@ -8,6 +8,16 @@
 //scope -> 0 local, 1 global
 //return true on success, false on fail
 
+typedef enum
+{
+    LABEL_IF,
+    LABEL_WHILE,
+    LABEL_CONTROL
+} LabelType;
+
+#define MAX_DIGITS_DOUBLE 50//neni presny, ale cca
+
+bool generate_unique_label(char* dest, LabelType type);
 
 bool generator_init();
 void generator_free();

@@ -44,7 +44,8 @@
 
 int err = 0;
 extern hSymtab *table;
-const char *operNames[];
+const char *operNamesP[] = {"+", "-", "*", "/", "//", "=", "==", ">", ">=", "<", "<=", "!", "!=", "(", ")", ":", ",", "new line", "keyword", "variable", "string", "documentary string", "int", "float", "indent", "dedent", "None", "pass", "unspecified", "func", "undefined"};
+
 int if_else_flag = 0;
 int var_flag = 0;
 int no_ret_flag;
@@ -53,7 +54,6 @@ hSym_fct_stack fct_predef_stack;
 // Basic without expressions yet // add code generating
 int fction_call(Token *token, hSymtab *act_table, int in_function){
   Type prev;
-  printf("a\n");
 
   unsigned param_cntr = 0;
   hSymtab_it *tmp_item_func = symtab_it_position((char*)token->data, act_table);
@@ -75,7 +75,6 @@ int fction_call(Token *token, hSymtab *act_table, int in_function){
 
       if (token->type == TypeVariable) {
         if (!symtab_it_position((char*)token->data, act_table)) {
-          printf("%s\n", (char*)token->data);
           return ERROR_SEMANTIC;
         }
         param_cntr++;
@@ -101,7 +100,6 @@ int fction_call(Token *token, hSymtab *act_table, int in_function){
     }
 
     return NO_ERROR;
-    printf("%s\n", operNames[token->type]);
 
 
   }
@@ -160,17 +158,17 @@ int fction_call(Token *token, hSymtab *act_table, int in_function){
                   if(!var_flag)
                     prev = token->type;
 
-                    if(var_flag)
-                        generate_fnc_param_set_var(token->data, ((hSymtab_Var*)symtab_it_position((char*)token->data, act_table)->data)->global, param_cntr);
-                    else
-                        generate_fnc_param_set_data(token->type, token->data, param_cntr);
+                  if(var_flag)
+                      generate_fnc_param_set_var(token->data, ((hSymtab_Var*)symtab_it_position((char*)token->data, act_table)->data)->global, param_cntr);
+                  else
+                      generate_fnc_param_set_data(token->type, token->data, param_cntr);
 
                 if (GET_TOKEN_CHECK_EOF(token)) {
                   return ERROR_SYNTAX;
                 }
                 if (!tmp_params->next) {
                   if (token->type != TypeRightBracket) {
-                    return ERROR_SEMANTIC;
+                    return ERROR_SEMANTIC_FUNCTION_CALL;
                   }
                   else {
 
@@ -181,7 +179,7 @@ int fction_call(Token *token, hSymtab *act_table, int in_function){
                 }
                 else{
                   if (token->type == TypeRightBracket) {
-                    return ERROR_SEMANTIC;
+                    return ERROR_SEMANTIC_FUNCTION_CALL;
                   }
                 }
 
@@ -193,16 +191,20 @@ int fction_call(Token *token, hSymtab *act_table, int in_function){
             }
             else{
               if (token->type != tmp_params->param_type) {
+
+                //////////////TODO////////////////
                 return ERROR_SEMANTIC;
+                //////////////////////////////////
+
               }
               else {
                   if(!var_flag)
                     prev = token->type;
 
-                    if(var_flag)
-                        generate_fnc_param_set_var(token->data, ((hSymtab_Var*)symtab_it_position((char*)token->data, act_table)->data)->global, param_cntr);
-                    else
-                        generate_fnc_param_set_data(token->type, token->data, param_cntr);
+                  if(var_flag)
+                      generate_fnc_param_set_var(token->data, ((hSymtab_Var*)symtab_it_position((char*)token->data, act_table)->data)->global, param_cntr);
+                  else
+                      generate_fnc_param_set_data(token->type, token->data, param_cntr);
 
                 if (GET_TOKEN_CHECK_EOF(token)) {
                   return ERROR_SYNTAX;
@@ -210,7 +212,7 @@ int fction_call(Token *token, hSymtab *act_table, int in_function){
 
                 if (!tmp_params->next) {
                   if (token->type != TypeRightBracket) {
-                    return ERROR_SEMANTIC;
+                    return ERROR_SEMANTIC_FUNCTION_CALL;
                   }
                   else {
 
@@ -221,7 +223,7 @@ int fction_call(Token *token, hSymtab *act_table, int in_function){
                 }
                 else{
                   if (token->type == TypeRightBracket) {
-                    return ERROR_SEMANTIC;
+                    return ERROR_SEMANTIC_FUNCTION_CALL;
                   }
                 }
 
@@ -235,16 +237,21 @@ int fction_call(Token *token, hSymtab *act_table, int in_function){
       }
     }
   }
+  // Function was not defined yet and is called in global scope
   else {
     return ERROR_SEMANTIC;
   }
+  return ERROR_INTERNAL;
 }
 
 
 int statement_body(Token *token, hSymtab *act_table){
   while (token->type != TypeDedend) {
 
-    if (GET_TOKEN_CHECK_EOF(token)) {DEBUG_PRINT("Reached EOF successfully\n"); return NO_ERROR;}
+    if (GET_TOKEN_CHECK_EOF(token)) {
+      DEBUG_PRINT("Reached EOF successfully\n");
+      return NO_ERROR;
+    }
 
     if (TOKEN_TYPE_NEEDED_CHECK(token->type, TypeDedend)) {
       if_else_flag = 1;
@@ -265,23 +272,24 @@ int statement_body(Token *token, hSymtab *act_table){
 int statement(Token *token, hSymtab *act_table){
   int else_ = 0;
 
-  int indent_cnt = 0;
-
   if (!strcmp((char*)token->data, "if")){
-    printf("\t \tSENT TO GENERATOR: %s\n", (char*)token->data);
+    //fprintf(stderr,"\t \tSENT TO GENERATOR: %s\n", (char*)token->data);
   }
   else if(!strcmp((char*)token->data, "while")) {
-    printf("\t \tSENT TO GENERATOR: %s\n", (char*)token->data);
+    //fprintf(stderr,"\t \tSENT TO GENERATOR: %s\n", (char*)token->data);
   }
   else if (!strcmp((char*)token->data, "else")) {
-    printf("\t \tSENT TO GENERATOR: %s\n", (char*)token->data);
+    //fprintf(stderr,"\t \tSENT TO GENERATOR: %s\n", (char*)token->data);
     else_ = 1;
   }
   else {
-    printf("Error or not implemented yet\n");
+    //fprintf(stderr,"Error or not implemented yet\n");
   }
 
-  if (GET_TOKEN_CHECK_EOF(token)) {DEBUG_PRINT("Reached EOF or Newline where it shouldn't be\n"); exit(1);}
+  if (GET_TOKEN_CHECK_EOF(token)) {
+    DEBUG_PRINT("Reached EOF or Newline where it shouldn't be\n");
+    exit(1);
+  }
 
 
 
@@ -290,47 +298,45 @@ int statement(Token *token, hSymtab *act_table){
     err = expression(NULL, token, NULL, act_table);
 
     if (!TOKEN_TYPE_NEEDED_CHECK(token->type, TypeColon)) {
-      DEBUG_PRINT("Syntax error: Colon is missing\n");
+      //DEBUG_PRINT("Syntax error: Colon is missing\n");
       return ERROR_SYNTAX;
     }
 
     if (GET_TOKEN_CHECK_EOF(token)) {
-      DEBUG_PRINT("Reached EOF where it should not be. \n");
+      //DEBUG_PRINT("Reached EOF where it should not be. \n");
       return ERROR_SYNTAX;
     }
 
     if (!TOKEN_TYPE_NEEDED_CHECK(token->type, TypeNewLine)) {
-      DEBUG_PRINT("Syntax error: Newline is missing\n");
+      //DEBUG_PRINT("Syntax error: Newline is missing\n");
       return ERROR_SYNTAX;
     }
 
 
     if (GET_TOKEN_CHECK_EOF(token) || !TOKEN_TYPE_NEEDED_CHECK(token->type, TypeIndent)) {
-      DEBUG_PRINT("Reached EOF where it should not be or indent missing. \n");
+      //DEBUG_PRINT("Reached EOF where it should not be or indent missing. \n");
       return ERROR_SYNTAX;
     }
 
     err = statement_body(token, act_table);
     return err;
-    printf("we good\n");
-    exit(0);
 
 
   }
   else if (else_ == 1 && token->type == TypeColon){
     if (GET_TOKEN_CHECK_EOF(token)) {
-      DEBUG_PRINT("Reached EOF where it should not be. \n");
+      //DEBUG_PRINT("Reached EOF where it should not be. \n");
       return ERROR_SYNTAX;
     }
 
     if (!TOKEN_TYPE_NEEDED_CHECK(token->type, TypeNewLine)) {
-      DEBUG_PRINT("Syntax error: Newline is missing\n");
+      //DEBUG_PRINT("Syntax error: Newline is missing\n");
       return ERROR_SYNTAX;
     }
 
 
     if (GET_TOKEN_CHECK_EOF(token) || !TOKEN_TYPE_NEEDED_CHECK(token->type, TypeIndent)) {
-      DEBUG_PRINT("Reached EOF where it should not be or indent missing. \n");
+      //DEBUG_PRINT("Reached EOF where it should not be or indent missing. \n");
       return ERROR_SYNTAX;
     }
 
@@ -339,7 +345,16 @@ int statement(Token *token, hSymtab *act_table){
   }
   else if (!strcmp((char*)token->data, "None")){
 
+
+    /////////TODO///////////
+
+
   }
+  else {
+    return ERROR_SYNTAX;
+  }
+
+  return ERROR_INTERNAL;
 
 }
 
@@ -349,14 +364,13 @@ int statement(Token *token, hSymtab *act_table){
 int assignment(Token *var, Token *value, hSymtab *act_table, int in_function){
 
   // GENERATE INSTRUCTION //
-    printf("\t \tSENT TO GENERATOR: %s\n", (char*)var->data);
-    printf("\t \tSENT TO GENERATOR: %s\n", operNames[value->type]);
+    //fprintf(stderr,"\t \tSENT TO GENERATOR: %s\n", (char*)var->data);
+    //fprintf(stderr,"\t \tSENT TO GENERATOR: %s\n", operNamesP[value->type]);
   ///
 
-  if (GET_TOKEN_CHECK_EOF(value) || TOKEN_TYPE_NEEDED_CHECK(value->type, TypeNewLine)) {DEBUG_PRINT("Reached EOF or Newline where it shouldn't be\n"); exit(1);}
-
-  hSymtab_it *tmp_item_var;
-  hSymtab_it *tmp_item_value;
+  if (GET_TOKEN_CHECK_EOF(value) || TOKEN_TYPE_NEEDED_CHECK(value->type, TypeNewLine)) {//DEBUG_PRINT("Reached EOF or Newline where it shouldn't be\n");
+    exit(1);
+  }
 
   bool global = true;
     if (!symtab_it_position((char*)var->data, act_table))
@@ -399,12 +413,12 @@ int assignment(Token *var, Token *value, hSymtab *act_table, int in_function){
 
 
     err = expression(NULL ,value, (*act_table)[symtab_hash_function((char*)var->data)], act_table);
-    if (err == ERROR_SYNTAX || err == ERROR_SEMANTIC) {
+    if (err != NO_ERROR) {
       return err;
     }
 
     if (!TOKEN_TYPE_NEEDED_CHECK(value->type, TypeNewLine)) {
-      DEBUG_PRINT("Colon not newline\n");
+      //DEBUG_PRINT("Colon not newline\n");
       return ERROR_SYNTAX;
     }
     ((hSymtab_Var*)((*act_table)[symtab_hash_function((char*)var->data)]->data))->defined = true;
@@ -425,7 +439,9 @@ int command(Token *token, hSymtab *act_table, int in_function, int statement_swi
     if_else_flag = 0;
     Token token_n;
 
-    if (GET_TOKEN_CHECK_EOF(&token_n)) {DEBUG_PRINT("Reached EOF where it shouldn't be\n"); exit(1);}
+    if (GET_TOKEN_CHECK_EOF(&token_n)) {//DEBUG_PRINT("Reached EOF.\n");
+      return NO_ERROR;
+    }
 
 
 
@@ -461,14 +477,14 @@ int command(Token *token, hSymtab *act_table, int in_function, int statement_swi
     if_else_flag = 0;
 
     if(in_function == 1){ //def cannot be in fuction
-      //printf("kokot\n");
+      ////fprintf(stderr,"kokot\n");
       return ERROR_SYNTAX;
     }
     free(token->data);//po tomhle ifu useless
 
     int fction_start_return = fction_start(token, act_table);
     if(fction_start_return == NO_ERROR){
-      //printf("jsem zpátky v body/command\n\n\n");
+      ////fprintf(stderr,"jsem zpátky v body/command\n\n\n");
     }
     else if(fction_start_return == ERROR_SYNTAX){
       return ERROR_SYNTAX;
@@ -480,7 +496,7 @@ int command(Token *token, hSymtab *act_table, int in_function, int statement_swi
       return ERROR_INTERNAL;
     }
     else{ //nemělo by se sem dostat
-      //printf("chyba, neměl bych se sem dostat\n");
+      ////fprintf(stderr,"chyba, neměl bych se sem dostat\n");
       return ERROR_INTERNAL;
     }
     //tady upravit aby prošlo, když vstupní kód končí definicí
@@ -488,8 +504,12 @@ int command(Token *token, hSymtab *act_table, int in_function, int statement_swi
       return;
     }
     else{*/
-    if (GET_TOKEN_CHECK_EOF(token)){DEBUG_PRINT("Reached EOF after function definition\n"); return 0;}//exit(1);}
-    body(token, act_table);
+    if (GET_TOKEN_CHECK_EOF(token)){//DEBUG_PRINT("Reached EOF after function definition\n");
+      return ERROR_SYNTAX;
+    }
+
+    err = body(token, act_table);
+    return err;
     //}
 
   } // Pridat None a Pass
@@ -505,6 +525,8 @@ int command(Token *token, hSymtab *act_table, int in_function, int statement_swi
   else {
     return ERROR_SYNTAX;
   }
+
+  return ERROR_INTERNAL;
 }
 
 int body(Token *token, hSymtab *act_table){
@@ -513,18 +535,23 @@ int body(Token *token, hSymtab *act_table){
         err = command(token, act_table, 0, 0);
 
         if (err == ERROR_SYNTAX || err == ERROR_SEMANTIC) {
-          DEBUG_PRINT("Error occured, parsing ended.\n");
+          //DEBUG_PRINT("Error occured, parsing ended.\n");
           return err;
         }
       }
       else{
-        DEBUG_PRINT("Found EOF, parsing terminated.\n");
+        //DEBUG_PRINT("Found EOF, parsing terminated.\n");
         return err;
       }
 
-      if (GET_TOKEN_CHECK_EOF(token)) {DEBUG_PRINT("Found EOF, parsing terminated.\n"); return err;}
+      if (GET_TOKEN_CHECK_EOF(token)) {//DEBUG_PRINT("Found EOF, parsing terminated.\n");
+      return err;
+      }
+
       if (TOKEN_TYPE_NEEDED_CHECK(token->type, TypeNewLine)) {
-        if (GET_TOKEN_CHECK_EOF(token)) {DEBUG_PRINT("Found EOF, parsing terminated.\n"); return err;}
+        if (GET_TOKEN_CHECK_EOF(token)) {//DEBUG_PRINT("Found EOF, parsing terminated.\n");
+          return err;
+        }
       }
 
   }
@@ -535,7 +562,10 @@ int body(Token *token, hSymtab *act_table){
 
 int fction_params(Token *token, hSymtab_it *symtab_it){
   //need new token, now token is left bracket
-  if (GET_TOKEN_CHECK_EOF(token) || TOKEN_TYPE_NEEDED_CHECK(token->type, TypeNewLine)) {DEBUG_PRINT("Reached EOF or Newline where it shouldn't be\n"); return ERROR_SYNTAX;}
+  if (GET_TOKEN_CHECK_EOF(token) || TOKEN_TYPE_NEEDED_CHECK(token->type, TypeNewLine)) {//DEBUG_PRINT("Reached EOF or Newline where it shouldn't be\n");
+   return ERROR_SYNTAX;
+  }
+
   int check_comma = 0; //params should not end with comma
   bool malloc_check = false; //we want malloc only fist time
   hSymtab_Func_Param *params = NULL;
@@ -572,7 +602,6 @@ int fction_params(Token *token, hSymtab_it *symtab_it){
         //for name check
         hSymtab_Func_Param *names = NULL;
         names = ((hSymtab_Func *)symtab_it->data)->params;
-        hSymtab_Func_Param *tmp = NULL;
 
         while(names != NULL){
           if(strcmp(names->paramName, (char*)token->data) == 0){
@@ -585,7 +614,7 @@ int fction_params(Token *token, hSymtab_it *symtab_it){
             names = names->next;
         }
 
-        //printf("%s\n", (char*)token->data);
+        ////fprintf(stderr,"%s\n", (char*)token->data);
 
         if( !(params->next = malloc(sizeof(hSymtab_Func_Param))) ){
           return ERROR_INTERNAL;
@@ -616,17 +645,19 @@ int fction_params(Token *token, hSymtab_it *symtab_it){
       param_counter++;
     }
     else if(TOKEN_TYPE_NEEDED_CHECK(token->type, TypeComma)){
-      //printf("%d\n", token->type);
+      ////fprintf(stderr,"%d\n", token->type);
       check_comma = 1;
     }
     else{
       //param není variable nebo comma
       return ERROR_SYNTAX;
     }
-    //printf("%d\n", token->type);
+    ////fprintf(stderr,"%d\n", token->type);
     //get next token
-    if (GET_TOKEN_CHECK_EOF(token) || TOKEN_TYPE_NEEDED_CHECK(token->type, TypeNewLine)) {DEBUG_PRINT("Reached EOF or Newline where it shouldn't be\n"); return ERROR_SYNTAX;}
-    //printf("%d\n", token->type);
+    if (GET_TOKEN_CHECK_EOF(token) || TOKEN_TYPE_NEEDED_CHECK(token->type, TypeNewLine)) {//DEBUG_PRINT("Reached EOF or Newline where it shouldn't be\n");
+      return ERROR_SYNTAX;
+    }
+    ////fprintf(stderr,"%d\n", token->type);
   }
   if (check_comma == 1){
     //add free
@@ -642,7 +673,7 @@ int fction_params(Token *token, hSymtab_it *symtab_it){
 
 int fction_body(Token *token, hSymtab_it *symtab_it){
   int indent_counter = 0, dedent_counter = 1; //last dedent is checked after this function
-  int no_ret_flag = 0;
+  no_ret_flag = 0;
 
   hSymtab local_table;
   symtab_init(&local_table);
@@ -667,7 +698,9 @@ int fction_body(Token *token, hSymtab_it *symtab_it){
   //if there is indent, it is ok
   if(TOKEN_TYPE_NEEDED_CHECK(token->type, TypeIndent)){
     indent_counter++;
-    if (GET_TOKEN_CHECK_EOF(token)) {DEBUG_PRINT("Reached EOF where it shouldn't be\n"); return ERROR_SYNTAX;}
+    if (GET_TOKEN_CHECK_EOF(token)) {//DEBUG_PRINT("Reached EOF where it shouldn't be\n");
+      return ERROR_SYNTAX;
+    }
 
       while (strcmp((char*)token->data, "return") != 0) {
           if (err == NO_ERROR) {
@@ -675,21 +708,23 @@ int fction_body(Token *token, hSymtab_it *symtab_it){
               return ERROR_SYNTAX;
             }
             if (err == ERROR_SYNTAX || err == ERROR_SEMANTIC) {
-              DEBUG_PRINT("Error occured, parsing ended.\n");
+              //DEBUG_PRINT("Error occured, parsing ended.\n");
               return err;
             }
           }
           else{
-            DEBUG_PRINT("Found EOF, parsing terminated.  %s\n", (char *)token->data);
+            //DEBUG_PRINT("Found EOF, parsing terminated.  %s\n", (char *)token->data);
             return err;
           }
           //EOF in body of function
-          if (GET_TOKEN_CHECK_EOF(token)) {DEBUG_PRINT("Found EOF, parsing terminated.\n"); return ERROR_SYNTAX;}
+          if (GET_TOKEN_CHECK_EOF(token)) {//DEBUG_PRINT("Found EOF, parsing terminated.\n");
+            return ERROR_SYNTAX;
+          }
 
           if (token->type == TypeDedend) {
-            printf("\n\nLOCAL----------------------->\n");
-            print_sym_tab(&local_table);
-            printf("<-------------------------END\n\n\n");
+            //fprintf(stderr,"\n\nLOCAL----------------------->\n");
+            //print_sym_tab(&local_table);
+            //fprintf(stderr,"<-------------------------END\n\n\n");
             no_ret_flag = 1;
 
             //add return type
@@ -698,7 +733,7 @@ int fction_body(Token *token, hSymtab_it *symtab_it){
           }
 
       }
-      printf("%s\n", operNames[token->type]);
+      //fprintf(stderr,"%s\n", operNamesP[token->type]);
       free(token->data);//smaze "return"
       if(indent_counter == dedent_counter){
         //doplnit return type
@@ -706,7 +741,7 @@ int fction_body(Token *token, hSymtab_it *symtab_it){
         //code ends with definition
         if(GET_TOKEN_CHECK_EOF(token)) return 0;
 
-        printf("%s\n", operNames[token->type]);
+        //fprintf(stderr,"%s\n", operNamesP[token->type]);
         //return value is variable or something
 
         if(!TOKEN_TYPE_NEEDED_CHECK(token->type, TypeNewLine)){
@@ -717,9 +752,9 @@ int fction_body(Token *token, hSymtab_it *symtab_it){
             }
             else{
 
-              printf("\n\nLOCAL----------------------->\n");
+              //fprintf(stderr,"\n\nLOCAL----------------------->\n");
               print_sym_tab(&local_table);
-              printf("<-------------------------END\n\n\n");
+              //fprintf(stderr,"<-------------------------END\n\n\n");
               //add return type
               err = expression(NULL, token, symtab_it, &local_table);
               free(token->data);//po zjisteni varu nazev smaze
@@ -730,9 +765,9 @@ int fction_body(Token *token, hSymtab_it *symtab_it){
           //something else, need fix for only possible return types
           //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
           //else{
-            printf("\n\nLOCAL----------------------->\n");
-            print_sym_tab(&local_table);
-            printf("<-------------------------END\n\n\n");
+            //fprintf(stderr,"\n\nLOCAL----------------------->\n");
+            //print_sym_tab(&local_table);
+            //fprintf(stderr,"<-------------------------END\n\n\n");
             //add return type
             err = expression(NULL, token, symtab_it, &local_table);
             generate_pop_return();
@@ -743,10 +778,11 @@ int fction_body(Token *token, hSymtab_it *symtab_it){
         }
         //no return value
         else{
-          printf("\n\nLOCAL----------------------->\n");
-          print_sym_tab(&local_table);
-          printf("<-------------------------END\n\n\n");
+          //fprintf(stderr,"\n\nLOCAL----------------------->\n");
+          //print_sym_tab(&local_table);
+          //fprintf(stderr,"<-------------------------END\n\n\n");
           //add return type
+          printf("HERE\n");
           free_symtab(&local_table, 1);
           return 1000;
         }
@@ -767,7 +803,9 @@ int fction_body(Token *token, hSymtab_it *symtab_it){
 
 int fction_start(Token *token, hSymtab *act_table){
 
-  if (GET_TOKEN_CHECK_EOF(token)) {DEBUG_PRINT("hereReached EOF or Newline where it shouldn't be\n"); return ERROR_SYNTAX;}
+  if (GET_TOKEN_CHECK_EOF(token)) {//DEBUG_PRINT("hereReached EOF or Newline where it shouldn't be\n");
+    return ERROR_SYNTAX;
+  }
 
   //beginning of function
   if(TOKEN_TYPE_NEEDED_CHECK(token->type, TypeVariable)){
@@ -780,7 +818,9 @@ int fction_start(Token *token, hSymtab *act_table){
     generate_fnc_begin(token->data);
 
     //check if next token is left bracket and not EOF or newline
-    if (GET_TOKEN_CHECK_EOF(token) || TOKEN_TYPE_NEEDED_CHECK(token->type, TypeNewLine)) {DEBUG_PRINT("Reached EOF or Newline where it shouldn't be\n"); return ERROR_SYNTAX;}
+    if (GET_TOKEN_CHECK_EOF(token) || TOKEN_TYPE_NEEDED_CHECK(token->type, TypeNewLine)) {//DEBUG_PRINT("Reached EOF or Newline where it shouldn't be\n");
+      return ERROR_SYNTAX;
+    }
 
     if(TOKEN_TYPE_NEEDED_CHECK(token->type, TypeLeftBracket)){
       //check if function with same name already exists
@@ -793,27 +833,31 @@ int fction_start(Token *token, hSymtab *act_table){
         int fction_return = fction_params(token, symtab_it_position((char *)fction_name.data, act_table));
 
         if(fction_return == ERROR_SYNTAX){
-          //printf("\n!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! nastala chyba !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n\n\n");
+          ////fprintf(stderr,"\n!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! nastala chyba !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n\n\n");
           return ERROR_SYNTAX;
         }
         else if(fction_return == ERROR_INTERNAL){
-          //printf("\n!!!!!!!!!!!!!!!!!!!!! malloc chyba !!!!!!!!!!!!!!!!!!!\n\n\n");
+          ////fprintf(stderr,"\n!!!!!!!!!!!!!!!!!!!!! malloc chyba !!!!!!!!!!!!!!!!!!!\n\n\n");
           return ERROR_INTERNAL;
         }
         else if(fction_return == ERROR_SEMANTIC){
-          //printf("chyba semanticka\n");
+          ////fprintf(stderr,"chyba semanticka\n");
           return ERROR_SEMANTIC;
         }
         //NO ERROR
 
         //get new token
-        if (GET_TOKEN_CHECK_EOF(token)) {DEBUG_PRINT("Reached EOF where it shouldn't be\n"); return ERROR_SYNTAX;}
+        if (GET_TOKEN_CHECK_EOF(token)) {//DEBUG_PRINT("Reached EOF where it shouldn't be\n");
+          return ERROR_SYNTAX;
+        }
         //is there ":"" and EOF after ")"?
         if(TOKEN_TYPE_NEEDED_CHECK(token->type, TypeColon)){
           if(GET_TOKEN_CHECK_EOF(token) || TOKEN_TYPE_NEEDED_CHECK(token->type, TypeNewLine)){
             //konec hlavičky
             //generate???
-            if (GET_TOKEN_CHECK_EOF(token)) {DEBUG_PRINT("Reached EOF where it shouldn't be\n"); return ERROR_SYNTAX;}
+            if (GET_TOKEN_CHECK_EOF(token)) {//DEBUG_PRINT("Reached EOF where it shouldn't be\n");
+              return ERROR_SYNTAX;
+            }
             //for easier check of return values form body of function
             int fction_body_return = fction_body(token, symtab_it_position((char *)fction_name.data, act_table));
             //after return check dedent
@@ -823,20 +867,22 @@ int fction_start(Token *token, hSymtab *act_table){
             //sterv generate_fnc_end(char* label)
 
             if (fction_body_return == 0){
-              //printf("return\n");
+              ////fprintf(stderr,"return\n");
               //newline
-              if (GET_TOKEN_CHECK_EOF(token)) {DEBUG_PRINT("Reached EOF where it shouldn't be\n"); return ERROR_SYNTAX;}
+              if (GET_TOKEN_CHECK_EOF(token)) {//DEBUG_PRINT("Reached EOF where it shouldn't be\n");
+                return ERROR_SYNTAX;
+              }
 
               //check dedent or eof
               if(GET_TOKEN_CHECK_EOF(token) || TOKEN_TYPE_NEEDED_CHECK(token->type, TypeDedend)){
-                printf("je tady dedent, nebo eof\n");
+                ////fprintf(stderr,"je tady dedent, nebo eof\n");
                 generate_fnc_end(fction_name.data);
                 free(fction_name.data);//dal uz nebude potreba
                 return NO_ERROR;
               }
               //po returnu není dedent
               else{
-                printf("chyba kurva1\n");
+                //fprintf(stderr,"chyba kurva1\n");
                 return ERROR_SYNTAX;
               }
             }
@@ -845,7 +891,7 @@ int fction_start(Token *token, hSymtab *act_table){
 
               // bez returnu
               if (TOKEN_TYPE_NEEDED_CHECK(token->type, TypeDedend) && no_ret_flag){
-                printf("je tady dedent, nebo eof\n");
+                ////fprintf(stderr,"je tady dedent, nebo eof\n");
                 generate_fnc_end(fction_name.data);
                 free(fction_name.data);//dal uz nebude potreba
                 return NO_ERROR;
@@ -853,23 +899,23 @@ int fction_start(Token *token, hSymtab *act_table){
 
               //check dedent or eof
               if(GET_TOKEN_CHECK_EOF(token) || TOKEN_TYPE_NEEDED_CHECK(token->type, TypeDedend)){
-                printf("je tady dedent, nebo eof\n");
+                ////fprintf(stderr,"je tady dedent, nebo eof\n");
                 generate_fnc_end(fction_name.data);
                 free(fction_name.data);//dal uz nebude potreba
                 return NO_ERROR;
               }
               //po returnu není dedent
               else{
-                printf("chyba kurva2\n");
+                //fprintf(stderr,"chyba kurva2\n");
                 return ERROR_SYNTAX;
               }
             }
             else if(fction_body_return == ERROR_SEMANTIC){
-              //printf("SEMANTICKA CHYBA\n");
+              ////fprintf(stderr,"SEMANTICKA CHYBA\n");
               return ERROR_SEMANTIC;
             }
             else if(fction_body_return == ERROR_SYNTAX){
-              printf("Syntax CHYBA\n");
+              //fprintf(stderr,"Syntax CHYBA\n");
               return ERROR_SYNTAX;
             }
             else{ //němelo by se sem dostat
@@ -877,12 +923,12 @@ int fction_start(Token *token, hSymtab *act_table){
             }
           }
           //po ":" není EOF
-          //printf("\n!!!!!!!!!!!!!!!!!!!!!!!!!! CHYBA UKONČENÍ HLAVIČKY EOF!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n\n\n");
+          ////fprintf(stderr,"\n!!!!!!!!!!!!!!!!!!!!!!!!!! CHYBA UKONČENÍ HLAVIČKY EOF!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n\n\n");
           return ERROR_SYNTAX;
         }
         //po pravé závorce není ":"
         else{
-          //printf("\n!!!!!!!!!!!!!!!!!!!!!!!!!! CHYBA UKONČENÍ HLAVIČKY !!!!!!!!!!!!!!!!!!!!!!!!!!!!\n\n\n");
+          ////fprintf(stderr,"\n!!!!!!!!!!!!!!!!!!!!!!!!!! CHYBA UKONČENÍ HLAVIČKY !!!!!!!!!!!!!!!!!!!!!!!!!!!!\n\n\n");
           return ERROR_SYNTAX;
         }
       }
@@ -908,17 +954,24 @@ int prog() {
   Token token;
   scanner_init();
   generator_init();
-  //sym_stack_init(fct_predef_stack);
 
 
 
   if(GET_TOKEN_CHECK_EOF(&token)){
-    DEBUG_PRINT("Test file is empty.\n");
+    //DEBUG_PRINT("Test file is empty.\n");
     return 1;
   }
 
   fct_predef_stack.top = malloc(sizeof(hSym_fct_node));
+  if (!fct_predef_stack.top) {
+    return ERROR_INTERNAL;
+  }
+
+
   table = malloc(sizeof(hSymtab));
+  if (!table) {
+    return ERROR_INTERNAL;
+  }
   symtab_init(table);
   symtab_add_predef_func(table);
 
@@ -926,24 +979,22 @@ int prog() {
   generate_main_begin();
   body(&token, table);
 
-  //printf("%s\n", fct_predef_stack.top->prev->fct_name);
-
-  err = sym_stack_pop_all(fct_predef_stack.top, table);
+  if (err == NO_ERROR){
+    err = sym_stack_pop_all(fct_predef_stack.top, table);
+  }
 
   generate_fnc_pre_param();
-  generate_push_var("vys", 1);
+  generate_push_var("a", 1);
   int i = 1;
   generate_fnc_param_set_data(TypeInt, &i, 0);
   generate_fnc_call("print");
 
   generate_main_end();
 
-  //char * str =generator_code_get();
-  printf("%s\n", generator_code_get());
+  if (err == NO_ERROR){
+    printf("%s\n", generator_code_get());
+  }
+    generator_free();
 
-/*
-  free_symtab(table);
-  free(table);
-*/
   return err;
 }

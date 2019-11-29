@@ -7,8 +7,6 @@
 #include "expression.h"
 //#include "symtab_stack.h"
 
-extern char current_line[1000];
-
 #define WANTED_TYPE 1
 #define UNWANTED_TYPE 0
 #define IF_STAT 26
@@ -34,3 +32,9 @@ int fction_call(Token *token, hSymtab *act_table, int in_function);
 int statement(Token *token, hSymtab *act_table);
 
 int statement_body(Token *token, hSymtab *act_table);
+
+int command(Token *token, hSymtab *act_table, int in_function, int statement_switch);
+
+int prog();
+
+int assignment(Token *var, Token *value, hSymtab *act_table, int in_function);

@@ -58,8 +58,6 @@ typedef struct fct_def_stack {
 
 typedef hSymtab_it *hSymtab[HTAB_PRIME];
 
-int sym_stack_init(hSym_fct_stack* f_stack);
-
 hSym_fct_node *sym_stack_push(hSym_fct_node* f_top, char *name);
 
 int sym_stack_pop_all(hSym_fct_node* f_top, hSymtab* act_table);
@@ -70,15 +68,14 @@ unsigned int symtab_hash_function(const char *str);
 
 void symtab_init(hSymtab *sym_tab);
 
-int symtab_it_get_type(hSymtab_it *symtab_it);
 
 hSymtab_it *symtab_it_position(char *searched_for, hSymtab *sym_tab);
 
-void symtab_add_it(hSymtab *sym_tab, Token *token);
+int symtab_add_it(hSymtab *sym_tab, Token *token);
 
-void symtab_add_var_data(hSymtab_it *symtab_it, Type type);
+int symtab_add_var_data(hSymtab_it *symtab_it, Type type);
 
-void symtab_add_predef_func(hSymtab *table);
+int symtab_add_predef_func(hSymtab *table);
 
 void free_symtab(hSymtab *table, int switch_local);
 

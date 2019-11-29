@@ -36,15 +36,15 @@ int expression_eval(int fction_switch, int pre_token_switch);
 
 int s_push();
 
-int s_pop();
+void s_pop();
 
 int ready_to_pop(int fction_switch);
 
 int id_s_push(TermStackIt *term_item);
 
-int id_stack_init();
+void id_stack_init();
 
-int id_s_pop();
+void id_s_pop();
 
 int check_operators_and_operands_syntax(Type operator, int fction_switch);
 

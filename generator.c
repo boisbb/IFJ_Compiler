@@ -155,6 +155,7 @@ bool generate_main_begin()
 }
 bool generate_main_end()
 {
+	inside_fnc = false;
 	return
 		ADD_LINE("POPFRAME") &&
 		ADD_LINE("CLEARS") &&

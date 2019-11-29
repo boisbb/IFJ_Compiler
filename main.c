@@ -4,6 +4,7 @@
 //#include "sym_tab.h"
 //#include "scanner.h"
 #include "parser.h"
+#include "generator.h"
 
 hSymtab *table;
 
@@ -42,6 +43,12 @@ int main() {
   }
   //fprintf(stderr, "a\n");
   //print_sym_tab(table);
+
+  if (err == NO_ERROR){
+    printf("%s\n", generator_code_get());
+  }
+    generator_free();
+
   fprintf(stderr,"\n");
   DEBUG_PRINT("_____PARSING ENDED SUCCESSFULLY_____\n");
   free_symtab(table, 0);

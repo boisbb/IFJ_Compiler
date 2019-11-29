@@ -1,7 +1,7 @@
 #include "scanner.h"
 #include "strings.h"
 #include "error.h"
-#include "sym_tab.h"
+#include "symtab.h"
 
 #define REALIZE_FUNC 1
 

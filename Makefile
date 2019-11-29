@@ -1,6 +1,6 @@
 CC = gcc
 CFLAGS=-std=c99 -Wall -Wextra -g -D DEBUG
-OBJ1 = parser.o strings.o stack.o scanner.o sym_tab.o generator.o expression.o main.o
+OBJ1 = parser.o strings.o stack.o scanner.o symtab.o generator.o expression.o main.o
 TARGET1 = main
 
 $(TARGET1): $(OBJ1)

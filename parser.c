@@ -991,10 +991,5 @@ int prog() {
 
   generate_main_end();
 
-  if (err == NO_ERROR){
-    printf("%s\n", generator_code_get());
-  }
-    generator_free();
-
   return err;
 }

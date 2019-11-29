@@ -54,22 +54,92 @@ hSym_fct_stack fct_predef_stack;
 
 int print_fct_call(Token *token, hSymtab *act_table){
   Print_Stack p_stack;
-  p_stack.top = 0;
+  p_stack.top = -1;
+  Type prev = TypeComma;
 
   if (GET_TOKEN_CHECK_EOF(token) && TOKEN_TYPE_NEEDED_CHECK(token->type, TypeRightBracket)) {
 
     //generete if there are no params
     return NO_ERROR;
   }
-  //while (token->type != TypeRightBracket) {
 
-  //}
-  fprintf( stderr, "%d\n", *(int*)token->data);
-  p_stack.term = malloc(sizeof(Token));
-  p_stack.term[0] = *token;
-  p_stack.term[2] = *token;
-  fprintf( stderr, "%d\n", *(int*)p_stack.term[0].data, *(int*)p_stack.term[0].data);
-  exit(1);
+  p_stack.term = malloc(sizeof(Token) * 10); /// proc x deset
+
+
+  while (token->type != TypeRightBracket) {
+    switch(token->type){
+      case TypeVariable:
+        if (symtab_it_position((char*)token->data, act_table)) {
+          if (symtab_it_position((char*)token->data, act_table)->item_type == IT_VAR){
+            p_stack.top++;
+            p_stack.term[p_stack.top] = *token;
+            //fprintf(stderr, "%s\n", (char*)p_stack.term[p_stack.top].data);
+            prev = token->type;
+          }
+          else{
+            return ERROR_SEMANTIC;
+          }
+        }
+        else {
+          return ERROR_SEMANTIC;
+        }
+        break;
+      case TypeString:
+      case TypeInt:
+      case TypeFloat:
+        p_stack.top++;
+        p_stack.term[p_stack.top] = *token;
+        //fprintf(stderr, "%d\n", *(int*)p_stack.term[p_stack.top].data);
+        prev = token->type;
+        break;
+
+      case TypeComma:
+        if (prev == TypeComma) {
+          return ERROR_SYNTAX;
+        }
+        prev = TypeComma;
+        break;
+      default:
+        return ERROR_SYNTAX;
+    }
+
+    if (GET_TOKEN_CHECK_EOF(token) && TOKEN_TYPE_NEEDED_CHECK(token->type, TypeRightBracket)) {
+
+        if (prev != TypeComma){
+          //generete if there are no params
+          return NO_ERROR;
+        }
+        else {
+          return ERROR_SYNTAX;
+        }
+    }
+
+  }
+
+  // POSILANI DO GENERATORU
+  generate_fnc_pre_param();
+  int push_num = p_stack.top + 1;
+  while(p_stack.top != -1){
+    switch (p_stack.term[p_stack.top].type) {
+      case TypeVariable:
+        generate_push_var(p_stack.term[p_stack.top].data, 1);
+        p_stack.top--;
+        break;
+
+      case TypeInt:
+      case TypeString:
+      case TypeFloat:
+        generate_push_data(p_stack.term[p_stack.top].type, p_stack.term[p_stack.top].data);
+        p_stack.top--;
+        break;
+      default:
+        return ERROR_SYNTAX;
+
+    }
+  }
+  generate_fnc_param_set_data(TypeInt , &push_num, 0);
+  generate_fnc_call("print");
+  return NO_ERROR;
 
 
 }
@@ -79,8 +149,9 @@ int fction_call(Token *token, hSymtab *act_table, int in_function){
   Type prev;
 
   if (!strcmp((char*)token->data, "print")) {
-    //print_fct_call(token, act_table);
-    
+    err = print_fct_call(token, act_table);
+    return err;
+
   }
 
   unsigned param_cntr = 0;
@@ -320,9 +391,11 @@ int statement(Token *token, hSymtab *act_table){
   }
 
 
-
+  // WHILE A IF -> zacatek podminky
   if (TOKEN_TYPE_NEEDED_CHECK(token->type, TypeInt) || TOKEN_TYPE_NEEDED_CHECK(token->type, TypeFloat) || TOKEN_TYPE_NEEDED_CHECK(token->type, TypeString) ||
       TOKEN_TYPE_NEEDED_CHECK(token->type, TypeVariable)) {
+
+    /// EXPRESSION PRO PODMINKU
     err = expression(NULL, token, NULL, act_table);
 
     if (!TOKEN_TYPE_NEEDED_CHECK(token->type, TypeColon)) {
@@ -346,11 +419,15 @@ int statement(Token *token, hSymtab *act_table){
       return ERROR_SYNTAX;
     }
 
+    /// TADY SE JDE DO TELA
     err = statement_body(token, act_table);
+
+    /// TADY SE VYSKOCI Z TELA A KONCI WHILE NEBO IF
     return err;
 
 
   }
+  /////////// ELSE
   else if (else_ == 1 && token->type == TypeColon){
     if (GET_TOKEN_CHECK_EOF(token)) {
       //DEBUG_PRINT("Reached EOF where it should not be. \n");
@@ -368,7 +445,9 @@ int statement(Token *token, hSymtab *act_table){
       return ERROR_SYNTAX;
     }
 
-    err = statement_body(token, act_table);
+    err = statement_body(token, act_table);// <------------ TADY SE JDE DO TELA
+
+    /// TADY KONCI CELY ELSE
     return err;
   }
   else if (!strcmp((char*)token->data, "None")){
@@ -810,7 +889,7 @@ int fction_body(Token *token, hSymtab_it *symtab_it){
           //print_sym_tab(&local_table);
           //fprintf(stderr,"<-------------------------END\n\n\n");
           //add return type
-          printf("HERE\n");
+          //printf("HERE\n");
           free_symtab(&local_table, 1);
           return 1000;
         }
@@ -1011,11 +1090,6 @@ int prog() {
     err = sym_stack_pop_all(fct_predef_stack.top, table);
   }
 
-  generate_fnc_pre_param();
-  generate_push_var("a", 1);
-  int i = 1;
-  generate_fnc_param_set_data(TypeInt, &i, 0);
-  generate_fnc_call("print");
 
   generate_main_end();
 

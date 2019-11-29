@@ -38,7 +38,7 @@ int main() {
   int err = -1;
   err = prog();
   if (err != NO_ERROR) {
-    DEBUG_PRINT("_____PARSING ENDED WITH ERROR %d_____\n", err);
+    //DEBUG_PRINT("_____PARSING ENDED WITH ERROR %d_____\n", err);
     return err;
   }
   //fprintf(stderr, "a\n");
@@ -47,10 +47,10 @@ int main() {
   if (err == NO_ERROR){
     printf("%s\n", generator_code_get());
   }
-    generator_free();
+  generator_free();
 
-  fprintf(stderr,"\n");
-  DEBUG_PRINT("_____PARSING ENDED SUCCESSFULLY_____\n");
+  //fprintf(stderr,"\n");
+  //DEBUG_PRINT("_____PARSING ENDED SUCCESSFULLY_____\n");
   free_symtab(table, 0);
   free(table);
 

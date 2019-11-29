@@ -51,9 +51,37 @@ int var_flag = 0;
 int no_ret_flag;
 hSym_fct_stack fct_predef_stack;
 
+
+int print_fct_call(Token *token, hSymtab *act_table){
+  Print_Stack p_stack;
+  p_stack.top = 0;
+
+  if (GET_TOKEN_CHECK_EOF(token) && TOKEN_TYPE_NEEDED_CHECK(token->type, TypeRightBracket)) {
+
+    //generete if there are no params
+    return NO_ERROR;
+  }
+  //while (token->type != TypeRightBracket) {
+
+  //}
+  fprintf( stderr, "%d\n", *(int*)token->data);
+  p_stack.term = malloc(sizeof(Token));
+  p_stack.term[0] = *token;
+  p_stack.term[2] = *token;
+  fprintf( stderr, "%d\n", *(int*)p_stack.term[0].data, *(int*)p_stack.term[0].data);
+  exit(1);
+
+
+}
+
 // Basic without expressions yet // add code generating
 int fction_call(Token *token, hSymtab *act_table, int in_function){
   Type prev;
+
+  if (!strcmp((char*)token->data, "print")) {
+    //print_fct_call(token, act_table);
+    
+  }
 
   unsigned param_cntr = 0;
   hSymtab_it *tmp_item_func = symtab_it_position((char*)token->data, act_table);

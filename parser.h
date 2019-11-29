@@ -19,6 +19,19 @@
 #define USERDEF 35
 
 
+// ______Print Stack_______ //
+typedef struct pr_Stack {
+  Token *term;
+  int top;
+  unsigned size;
+} Print_Stack;
+
+int print_fct_call(Token *token, hSymtab *act_table);
+//int print_stack_push(Token *token);
+
+//int print_stack_pop_all();
+//_______________________________
+
 int fction_start(Token *token, hSymtab *table);
 
 int fction_params(Token *token, hSymtab_it *symtab_it);

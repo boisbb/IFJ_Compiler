@@ -1,4 +1,4 @@
-#include "sym_tab.h"
+#include "symtab.h"
 #include <stdint.h>
 // HASHING FUNCTION //
 unsigned int symtab_hash_function(const char *str) {
@@ -44,7 +44,7 @@ hSymtab_it *symtab_it_position(char *searched_for, hSymtab *sym_tab){
 
 int is_item_var_defined(char *desired, hSymtab *sym_tab){
   if (!(symtab_it_position(desired, sym_tab))) {
-    DEBUG_PRINT("ERROR: variable %s does not existabc.\n", desired);
+    ////DEBUG_PRINT("ERROR: variable %s does not existabc.\n", desired);
     return ERROR_SEMANTIC;
   }
   else {
@@ -132,7 +132,7 @@ int symtab_add_predef_func(hSymtab *table){
   Token tok_fc;
 
   // print(str,str,str,....) - set only for one, further check of arguments required in parser
-  /*if (!(tok_fc.data = malloc(sizeof(char) * (strlen("print") + 1)))){DEBUG_PRINT("Failed to allocate memory for function.\n"); return;}
+  /*if (!(tok_fc.data = malloc(sizeof(char) * (strlen("print") + 1)))){//DEBUG_PRINT("Failed to allocate memory for function.\n"); return;}
   strcpy((char*)tok_fc.data, "print");*/
   tok_fc.data = "print";
   tok_fc.type = TypeFunc;
@@ -140,7 +140,8 @@ int symtab_add_predef_func(hSymtab *table){
 
   ((hSymtab_Func*)((*table)[symtab_hash_function((char*)tok_fc.data)]->data))->defined = true;
   if (!(((hSymtab_Func*)((*table)[symtab_hash_function((char*)tok_fc.data)]->data))->params = calloc(1, sizeof(hSymtab_Func_Param)))) {
-    DEBUG_PRINT("Failed to allocate memory for function.\n"); return ERROR_INTERNAL;
+    //DEBUG_PRINT("Failed to allocate memory for function.\n");
+    return ERROR_INTERNAL;
   }
 
   ((hSymtab_Func*)((*table)[symtab_hash_function((char*)tok_fc.data)]->data))->params->param_type = TypeString;
@@ -150,7 +151,7 @@ int symtab_add_predef_func(hSymtab *table){
   //
 
   // inputs()
-  //if (!(tok_fc.data = malloc(sizeof(char) * (strlen("inputs") + 1)))){DEBUG_PRINT("Failed to allocate memory for function.\n"); return;}
+  //if (!(tok_fc.data = malloc(sizeof(char) * (strlen("inputs") + 1)))){//DEBUG_PRINT("Failed to allocate memory for function.\n"); return;}
   //strcpy((char*)tok_fc.data, "inputs");
   tok_fc.data = "inputs";
   tok_fc.type = TypeFunc;
@@ -162,7 +163,7 @@ int symtab_add_predef_func(hSymtab *table){
   //
 
   // inputf()
-  //if (!(tok_fc.data = malloc(sizeof(char) * (strlen("inputf") + 1)))){DEBUG_PRINT("Failed to allocate memory for function.\n"); return;}
+  //if (!(tok_fc.data = malloc(sizeof(char) * (strlen("inputf") + 1)))){//DEBUG_PRINT("Failed to allocate memory for function.\n"); return;}
   //strcpy((char*)tok_fc.data, "inputf");
   tok_fc.data = "inputf";
   tok_fc.type = TypeFunc;
@@ -174,7 +175,7 @@ int symtab_add_predef_func(hSymtab *table){
   //
 
   // inputi()
-  //if (!(tok_fc.data = malloc(sizeof(char) * (strlen("inputi") + 1)))){DEBUG_PRINT("Failed to allocate memory for function.\n"); return;}
+  //if (!(tok_fc.data = malloc(sizeof(char) * (strlen("inputi") + 1)))){//DEBUG_PRINT("Failed to allocate memory for function.\n"); return;}
   //strcpy((char*)tok_fc.data, "inputi");
   tok_fc.data = "inputi";
   tok_fc.type = TypeFunc;
@@ -186,7 +187,7 @@ int symtab_add_predef_func(hSymtab *table){
   //
 
   // len(str) //
-  //if (!(tok_fc.data = malloc(sizeof(char) * (strlen("len") + 1)))){DEBUG_PRINT("Failed to allocate memory for function.\n"); return;}
+  //if (!(tok_fc.data = malloc(sizeof(char) * (strlen("len") + 1)))){//DEBUG_PRINT("Failed to allocate memory for function.\n"); return;}
   //strcpy((char*)tok_fc.data, "len");
   tok_fc.data = "len";
   tok_fc.type = TypeFunc;
@@ -194,7 +195,8 @@ int symtab_add_predef_func(hSymtab *table){
   ((hSymtab_Func*)((*table)[symtab_hash_function((char*)tok_fc.data)]->data))->defined = true;
 
   if (!(((hSymtab_Func*)((*table)[symtab_hash_function((char*)tok_fc.data)]->data))->params = calloc(1, sizeof(hSymtab_Func_Param)))) {
-    DEBUG_PRINT("Failed to allocate memory for function.\n"); return ERROR_INTERNAL;
+    //DEBUG_PRINT("Failed to allocate memory for function.\n");
+    return ERROR_INTERNAL;
   }
 
   ((hSymtab_Func*)((*table)[symtab_hash_function((char*)tok_fc.data)]->data))->params->param_type = TypeString;
@@ -205,7 +207,7 @@ int symtab_add_predef_func(hSymtab *table){
   //
 
   // substr(str,int,int) //
-  //if (!(tok_fc.data = malloc(sizeof(char) * (strlen("substr") + 1)))){DEBUG_PRINT("Failed to allocate memory for function.\n"); return;}
+  //if (!(tok_fc.data = malloc(sizeof(char) * (strlen("substr") + 1)))){//DEBUG_PRINT("Failed to allocate memory for function.\n"); return;}
   //strcpy((char*)tok_fc.data, "substr");
   tok_fc.data = "substr";
   tok_fc.type = TypeFunc;
@@ -213,7 +215,8 @@ int symtab_add_predef_func(hSymtab *table){
   ((hSymtab_Func*)((*table)[symtab_hash_function((char*)tok_fc.data)]->data))->defined = true;
 
   if (!(((hSymtab_Func*)((*table)[symtab_hash_function((char*)tok_fc.data)]->data))->params = malloc(sizeof(hSymtab_Func_Param)))) {
-    DEBUG_PRINT("Failed to allocate memory for function.\n"); return ERROR_INTERNAL;
+    //DEBUG_PRINT("Failed to allocate memory for function.\n");
+    return ERROR_INTERNAL;
   }
 
   ((hSymtab_Func*)((*table)[symtab_hash_function((char*)tok_fc.data)]->data))->params->param_type = TypeString;
@@ -223,7 +226,9 @@ int symtab_add_predef_func(hSymtab *table){
   hSymtab_Func_Param *f_param = ((hSymtab_Func*)((*table)[symtab_hash_function((char*)tok_fc.data)]->data))->params;
 
   for (int i = 0; i < 2; i++) {
-    if(!(f_param->next = calloc(1, sizeof(hSymtab_Func_Param)))){DEBUG_PRINT("Failed to allocate memory for function.\n"); return ERROR_INTERNAL;}
+    if(!(f_param->next = calloc(1, sizeof(hSymtab_Func_Param)))){//DEBUG_PRINT("Failed to allocate memory for function.\n");
+      return ERROR_INTERNAL;
+    }
     f_param->next->param_type = TypeInt;
     f_param->next->paramName = NULL;
     f_param = f_param->next;
@@ -232,7 +237,7 @@ int symtab_add_predef_func(hSymtab *table){
   //
 
   // ord(str,int) //
-  //if (!(tok_fc.data = malloc(sizeof(char) * (strlen("ord") + 1)))) {DEBUG_PRINT("Failed to allocate memory for function.\n"); return;}
+  //if (!(tok_fc.data = malloc(sizeof(char) * (strlen("ord") + 1)))) {//DEBUG_PRINT("Failed to allocate memory for function.\n"); return;}
   //strcpy((char*)tok_fc.data, "ord");
   tok_fc.data = "ord";
   tok_fc.type = TypeFunc;
@@ -240,7 +245,8 @@ int symtab_add_predef_func(hSymtab *table){
   ((hSymtab_Func*)((*table)[symtab_hash_function((char*)tok_fc.data)]->data))->defined = true;
 
   if (!(((hSymtab_Func*)((*table)[symtab_hash_function((char*)tok_fc.data)]->data))->params = malloc(sizeof(hSymtab_Func_Param)))) {
-    DEBUG_PRINT("Failed to allocate memory for function.\n"); return ERROR_INTERNAL;
+    //DEBUG_PRINT("Failed to allocate memory for function.\n");
+    return ERROR_INTERNAL;
   }
 
   ((hSymtab_Func*)((*table)[symtab_hash_function((char*)tok_fc.data)]->data))->params->param_type = TypeString;
@@ -250,7 +256,9 @@ int symtab_add_predef_func(hSymtab *table){
   f_param = ((hSymtab_Func*)((*table)[symtab_hash_function((char*)tok_fc.data)]->data))->params;
 
   for (int i = 0; i < 1; i++) {
-    if(!(f_param->next = calloc(1, sizeof(hSymtab_Func_Param)))){DEBUG_PRINT("Failed to allocate memory for function.\n"); return ERROR_INTERNAL;}
+    if(!(f_param->next = calloc(1, sizeof(hSymtab_Func_Param)))){//DEBUG_PRINT("Failed to allocate memory for function.\n");
+      return ERROR_INTERNAL;
+    }
     f_param->next->param_type = TypeInt;
     f_param->next->paramName = NULL;
     f_param = f_param->next;
@@ -265,7 +273,8 @@ int symtab_add_predef_func(hSymtab *table){
   ((hSymtab_Func*)((*table)[symtab_hash_function((char*)tok_fc.data)]->data))->defined = true;
 
   if (!(((hSymtab_Func*)((*table)[symtab_hash_function((char*)tok_fc.data)]->data))->params = calloc(1, sizeof(hSymtab_Func_Param)))) {
-    DEBUG_PRINT("Failed to allocate memory for function.\n"); return ERROR_INTERNAL;
+    //DEBUG_PRINT("Failed to allocate memory for function.\n");
+    return ERROR_INTERNAL;
   }
 
   ((hSymtab_Func*)((*table)[symtab_hash_function((char*)tok_fc.data)]->data))->params->param_type = TypeInt;
@@ -344,7 +353,7 @@ hSym_fct_node *sym_stack_push(hSym_fct_node* f_top, char *name){
       return f_top;
   }
   if (!(f_top->next = malloc(sizeof(hSym_fct_node))) /*|| !(stack.top->next->prev = malloc(sizeof(TermStackIt)))*/) {
-    DEBUG_PRINT("INTERNAL ERROR: Memory allocation failed.\n");
+    //DEBUG_PRINT("INTERNAL ERROR: Memory allocation failed.\n");
     return NULL;
   }
 
@@ -371,7 +380,7 @@ int sym_stack_pop_all(hSym_fct_node* f_top, hSymtab* act_table){
   while (tmp_top) {
     fction_item = symtab_it_position(tmp_top->fct_name, act_table);
     if (!fction_item) {
-      DEBUG_PRINT("Semantic Error: function %s was not defined.\n", tmp_top->fct_name);
+      //DEBUG_PRINT("Semantic Error: function %s was not defined.\n", tmp_top->fct_name);
       return ERROR_SEMANTIC;
     }
     else{
@@ -383,12 +392,12 @@ int sym_stack_pop_all(hSym_fct_node* f_top, hSymtab* act_table){
           tmp_top = swp;
         }
         else {
-          //DEBUG_PRINT("Semantic Error: function %s was not defined.\n", tmp_top->fct_name);
+          ////DEBUG_PRINT("Semantic Error: function %s was not defined.\n", tmp_top->fct_name);
           return ERROR_SEMANTIC_FUNCTION_CALL;
         }
       }
       else {
-        DEBUG_PRINT("Semantic Error: function %s was not defined.\n", tmp_top->fct_name);
+        //DEBUG_PRINT("Semantic Error: function %s was not defined.\n", tmp_top->fct_name);
         return ERROR_SEMANTIC;
       }
     }

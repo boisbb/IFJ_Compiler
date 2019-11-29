@@ -744,11 +744,15 @@ int check_operators_and_operands_syntax(Type operator, int fction_switch){
       param_type = TypeUnspecified;
     }
     //generate_operation(operator); //generator
-    generate_operation_unspecified("control", operator); //generator TODO
+    char uql[MAX_DIGITS_DOUBLE];
+    generate_unique_label(uql, LABEL_CONTROL);
+    generate_operation_unspecified(uql, operator); //generator TODO
   }
   else if(r_operand.type == TypeUnspecified && l_operand.type == TypeUnspecified)
   {
-      generate_operation_unspecified("control", operator); //generator
+      char uql[MAX_DIGITS_DOUBLE];
+      generate_unique_label(uql, LABEL_CONTROL);
+      generate_operation_unspecified(uql, operator); //generator
   }
   else {
     ////fprintf(stderr,"R: %s OP: %s R: %s\n", operNames_[r_operand.type], operNames_[operator],operNames_[r_operand.type]);

@@ -1,16 +1,16 @@
 #include "generator.h"
-
-
-#include "strings.h"
 #include "generator_functions.h"
+#include "strings.h"
 
 //GLOBALS
 String code = {};
 String fnc = {};
 bool inside_fnc = true;
-/////////
 
-#define MAX_DIGITS_DOUBLE 50
+size_t if_label_counter = 0;
+size_t while_label_counter = 0;
+size_t control_label_counter = 0;
+/////////
 
 #define ADD_CODE(str) \
 	(inside_fnc ? str_push(&fnc, (str)) : str_push(&code, (str)))
@@ -18,6 +18,10 @@ bool inside_fnc = true;
 #define ADD_LINE(line) \
 	ADD_CODE(line "\n")
 
+static inline bool get_str_from_index(char* str, unsigned index)
+{
+	return sprintf(str, "%d", index) > 0;
+}
 
 static inline bool generate_header()
 {
@@ -113,9 +117,21 @@ static inline bool generate_var_value(Type type, void* data)
 	return ret;
 }
 
-static inline bool get_str_from_index(char* str, unsigned index)
+bool generate_unique_label(char* dest, LabelType type)
 {
-	return sprintf(str, "%d", index) > 0;
+	switch (type)
+	{
+		case LABEL_IF:
+			return sprintf(dest, "if%ld", if_label_counter++) > 0;
+			break;
+		case LABEL_WHILE:
+			return sprintf(dest, "while%ld", while_label_counter++) > 0;
+			break;
+		case LABEL_CONTROL:
+			return sprintf(dest, "control%ld", control_label_counter++) > 0;
+			break;
+	}
+	return false;
 }
 
 bool generator_init()

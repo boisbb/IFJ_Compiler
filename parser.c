@@ -373,13 +373,15 @@ int statement(Token *token, hSymtab *act_table){
 
   if (!strcmp((char*)token->data, "if")){
     //fprintf(stderr,"\t \tSENT TO GENERATOR: %s\n", (char*)token->data);
+    else_ = 1;
   }
   else if(!strcmp((char*)token->data, "while")) {
     //fprintf(stderr,"\t \tSENT TO GENERATOR: %s\n", (char*)token->data);
+    else_ = -1;
   }
   else if (!strcmp((char*)token->data, "else")) {
     //fprintf(stderr,"\t \tSENT TO GENERATOR: %s\n", (char*)token->data);
-    else_ = 1;
+    //else_ = 1;
   }
   else {
     //fprintf(stderr,"Error or not implemented yet\n");
@@ -391,11 +393,23 @@ int statement(Token *token, hSymtab *act_table){
   }
 
 
-  // WHILE A IF -> zacatek podminky
+
   if (TOKEN_TYPE_NEEDED_CHECK(token->type, TypeInt) || TOKEN_TYPE_NEEDED_CHECK(token->type, TypeFloat) || TOKEN_TYPE_NEEDED_CHECK(token->type, TypeString) ||
       TOKEN_TYPE_NEEDED_CHECK(token->type, TypeVariable)) {
 
-    /// EXPRESSION PRO PODMINKU
+    char uql[MAX_DIGITS_DOUBLE];
+      if (else_ == 1)
+      {
+          char uql[MAX_DIGITS_DOUBLE];
+          generate_unique_label(uql, LABEL_IF);
+      }
+      else if(else_ == -1)
+      {
+        char uql[MAX_DIGITS_DOUBLE];
+        generate_unique_label(uql, LABEL_WHILE);
+        generate_while_begin(uql);
+      }
+
     err = expression(NULL, token, NULL, act_table);
 
     if (!TOKEN_TYPE_NEEDED_CHECK(token->type, TypeColon)) {
@@ -419,15 +433,53 @@ int statement(Token *token, hSymtab *act_table){
       return ERROR_SYNTAX;
     }
 
-    /// TADY SE JDE DO TELA
-    err = statement_body(token, act_table);
 
-    /// TADY SE VYSKOCI Z TELA A KONCI WHILE NEBO IF
+
+    generate_pop_exp();
+
+    if (else_ == 1)
+    {
+        generate_if_begin(uql, 1);
+    }
+    else if(else_ == -1)
+    {
+        generate_while_loop(uql);
+    }
+
+    err = statement_body(token, act_table);
+    if(err)
+        return err;
+
+/* else?
+    if (GET_TOKEN_CHECK_EOF(token)) {
+      DEBUG_PRINT("Reached EOF or Newline where it shouldn't be\n");
+      return ERROR_SYNTAX;
+    }
+
+    if (!strcmp((char*)token->data, "else")) {
+        if(!else_)
+            return ERROR_SYNTAX;
+        generate_else(uql, else_);
+        else_++;
+        err = statement_body(token, act_table);
+        if(err)
+            return err;
+    }
+*/
+
+    if (else_ == 1)
+    {
+        generate_if_end(uql, else_);
+    }
+    else if(else_ == -1)
+    {
+        generate_while_end(uql);
+    }
+
     return err;
 
 
-  }
-  /////////// ELSE
+}/*
   else if (else_ == 1 && token->type == TypeColon){
     if (GET_TOKEN_CHECK_EOF(token)) {
       //DEBUG_PRINT("Reached EOF where it should not be. \n");
@@ -445,11 +497,9 @@ int statement(Token *token, hSymtab *act_table){
       return ERROR_SYNTAX;
     }
 
-    err = statement_body(token, act_table);// <------------ TADY SE JDE DO TELA
-
-    /// TADY KONCI CELY ELSE
+    err = statement_body(token, act_table);
     return err;
-  }
+}*/
   else if (!strcmp((char*)token->data, "None")){
 
 

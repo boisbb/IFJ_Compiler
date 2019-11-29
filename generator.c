@@ -78,7 +78,7 @@ static inline bool generate_var_value(Type type, void* data)
 				}
 				else
 				{
-					ret = ADD_CODE("float@0.0");
+					ret = ADD_CODE("float@0x0p+0");
 				}
 				break;
 			case TypeString:
@@ -497,7 +497,7 @@ bool generate_if_begin(char* label, unsigned index)
 		ADD_CODE("JUMP $") && ADD_CODE(label) && ADD_CODE("%begin\n") &&
 
 		ADD_CODE("LABEL $") && ADD_CODE(label) && ADD_CODE("%float\n") &&
-		ADD_LINE("EQ GF@%exp_result GF@%exp_result float@0.0") &&
+		ADD_LINE("EQ GF@%exp_result GF@%exp_result float@0x0p+0") &&
 		ADD_LINE("NOT GF@%exp_result GF@%exp_result") &&
 
 		ADD_CODE("LABEL $") && ADD_CODE(label) && ADD_CODE("%begin\n") &&
@@ -506,15 +506,17 @@ bool generate_if_begin(char* label, unsigned index)
 bool generate_else(char* label, unsigned index)
 {
 	char tmp[MAX_DIGITS_DOUBLE];
-	return index > 0 && get_str_from_index(tmp, index) &&
-		ADD_CODE("JUMP ") && ADD_CODE(label) && ADD_CODE("%0\n") &&
+	char tmp2[MAX_DIGITS_DOUBLE];
+	return index > 0 && get_str_from_index(tmp, index) && get_str_from_index(tmp2, index+1) &&
+		ADD_CODE("JUMP ") && ADD_CODE(label) && ADD_CODE("%") && ADD_CODE(tmp2) && ADD_CODE("\n") &&
 		ADD_LINE("# Else") &&
 		ADD_CODE("LABEL $") && ADD_CODE(label) && ADD_CODE("%") && ADD_CODE(tmp) && ADD_CODE("\n");
 }
-bool generate_if_end(char* label)
+bool generate_if_end(char* label, unsigned index)
 {
-	return
-		ADD_CODE("LABEL $") && ADD_CODE(label) && ADD_CODE("%0\n") &&
+	char tmp[MAX_DIGITS_DOUBLE];
+	return get_str_from_index(tmp, index) &&
+		ADD_CODE("LABEL $") && ADD_CODE(label) && ADD_CODE("%") && ADD_CODE(tmp) && ADD_CODE("\n") &&
 		ADD_LINE("# If END");
 }
 
@@ -543,7 +545,7 @@ bool generate_while_loop(char* label)
 		ADD_CODE("JUMP $") && ADD_CODE(label) && ADD_CODE("%loop\n") &&
 
 		ADD_CODE("LABEL $") && ADD_CODE(label) && ADD_CODE("%float\n") &&
-		ADD_LINE("EQ GF@%exp_result GF@%exp_result float@0.0") &&
+		ADD_LINE("EQ GF@%exp_result GF@%exp_result float@0x0p+0") &&
 		ADD_LINE("NOT GF@%exp_result GF@%exp_result") &&
 
 		ADD_CODE("LABEL $") && ADD_CODE(label) && ADD_CODE("%loop\n") &&

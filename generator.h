@@ -65,7 +65,7 @@ bool generate_if_begin(char* label, unsigned index);
 // You can choose index for else, but cant be 0, bcs 0 is end
 bool generate_else(char* label, unsigned index);
 // index = 0
-bool generate_if_end(char* label);
+bool generate_if_end(char* label, unsigned index);
 
 bool generate_while_begin(char* label);
 bool generate_while_loop(char* label);

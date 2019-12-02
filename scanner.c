@@ -14,7 +14,7 @@
 /////// CONSTANTS ////
 const char *keywords[] = { "def", "else", "if", "None", "pass", "return", "while" };
 const Type keyword_types[] = { TypeUndefined, TypeUndefined, TypeUndefined, TypeKeywordNone, TypeKeywordPass, TypeUndefined, TypeUndefined };
-
+const char *type_names[] = {"+", "-", "*", "/", "//", "=", "==", ">", ">=", "<", "<=", "!", "!=", "(", ")", ":", ",", /*"tab", */"new line", "keyword", "variable", "string", "documentary string", "int", "float", "indent", "dedent", "None", "pass"};
 /////// STATES ///////
 #define STATE_INITIAL 259
 
@@ -198,7 +198,6 @@ int get_next_token(Token *token)
 				}
 				else if(c == '#')
 				{
-					first_token = false;
 					state = STATE_LINE_COMMENT;
 				}
 				else if(c == '\"')
@@ -232,7 +231,7 @@ int get_next_token(Token *token)
 				}
 				else
 				{
-					fprintf(stderr, "%s: 0x%.2X, %i\n", "unknown symbol", c, c);
+					DEBUG_PRINT("%s: 0x%.2X, %i\n", "unknown symbol", c, c);
 					return ERROR_LEXICAL;
 				}
 				break;
@@ -669,54 +668,23 @@ int get_next_token(Token *token)
 				break;
 		}
 	}
+
+#if defined(DEBUG) && DEBUG > 0
+	if(token->type == TypeString || token->type == TypeVariable || token->type == TypeKeyword || token->type == TypeDocString)
+		DEBUG_PRINT("Token type: %s | Token data: %s \n", type_names[token->type], (char*)token->data);
+	else if(token->type == TypeInt)
+		DEBUG_PRINT("Token type: %s | Token data: %i \n", type_names[token->type], *(int*)token->data);
+	else if(token->type == TypeFloat)
+		DEBUG_PRINT("Token type: %s | Token data: %f \n", type_names[token->type], *(double*)token->data);
+	else
+		DEBUG_PRINT("Token type: %s \n", type_names[token->type]);
+#endif
+
 	//eof in state, where it shouldnt be. isnt finished -> todo
 	if(c == EOF && !break_while && state != STATE_INITIAL)
 		return ERROR_LEXICAL;
 	else if (c == EOF)
 		return EOF;
 	else
-		return 0;
+		return NO_ERROR;
 }
-
-#if defined(DEBUG) && DEBUG > 0
-const char *type_names[] = {"+", "-", "*", "/", "//", "=", "==", ">", ">=", "<", "<=", "!", "!=", "(", ")", ":", ",", /*"tab", */"new line", "keyword", "variable", "string", "documentary string", "int", "float", "indent", "dedent", "None", "pass"};
-int scanner_main()
-{
-	Token token = {};
-	int err_num = 0;
-
-	scanner_init();
-
-	while((err_num = get_next_token(&token)) == 0)
-	{
-		if(token.type == TypeString || token.type == TypeVariable || token.type == TypeKeyword || token.type == TypeDocString)
-			printf("Token type: %s | Token data: %s \n", type_names[token.type], (char*)token.data);
-		else if(token.type == TypeInt)
-			printf("Token type: %s | Token data: %i \n", type_names[token.type], *(int*)token.data);
-		else if(token.type == TypeFloat)
-			printf("Token type: %s | Token data: %f \n", type_names[token.type], *(double*)token.data);
-		else
-			printf("Token type: %s \n", type_names[token.type]);
-		free(token.data);
-		token.data = NULL;
-	}
-	free(token.data);
-
-	scanner_free();
-
-	switch (err_num)
-	{
-		case ERROR_LEXICAL:
-			fprintf(stderr, "%s\n", "ERROR_LEXICAL");
-			break;
-		case ERROR_INTERNAL:
-			fprintf(stderr, "%s\n", "ERROR_INTERNAL");
-			break;
-		case EOF:
-			printf("EOF\n");
-			err_num = 0;
-			break;
-	}
-	return err_num;
-}
-#endif

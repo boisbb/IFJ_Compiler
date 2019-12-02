@@ -51,12 +51,6 @@ typedef struct
 } Token;
 ////////////////////
 
-/// JUST FOR TESTING ///
-#if defined(DEBUG) && DEBUG > 0
- int scanner_main();
-#endif
-///////////////////////
-
 // function, that should be called before using function scanner
 // returns 0 on error and 1 on success
 int scanner_init();

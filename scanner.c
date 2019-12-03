@@ -72,7 +72,7 @@ void scanner_set_stream(FILE *stream)
 	_stream = stream;
 }
 
-int get_next_token(Token *token)
+int get_next_token_internal(Token *token)
 {
 	if(!stack.content || stack_empty(&stack))
 		return ERROR_INTERNAL;
@@ -334,7 +334,10 @@ int get_next_token(Token *token)
 				break;
 			case STATE_LINE_COMMENT:
 				if(c == '\n')
+				{
+					ungetc(c, _stream);
 					state = STATE_INITIAL;
+				}
 				break;
 			case STATE_DOC_STRING_IN1:
 				if(c == '\"')
@@ -556,6 +559,8 @@ int get_next_token(Token *token)
 				{
 					if(!str_pushc(&str, c))
 						return ERROR_INTERNAL;
+					if(str.content[0] == '0' && str.content[1] == '0')
+						return ERROR_LEXICAL;
 				}
 				else if(c == '.')
 				{
@@ -569,6 +574,8 @@ int get_next_token(Token *token)
 						return ERROR_INTERNAL;
 					state = STATE_FLOAT_E;
 				}
+				else if(isalpha(c))
+					return ERROR_LEXICAL;
 				else
 				{
 					ungetc(c, _stream);
@@ -599,14 +606,28 @@ int get_next_token(Token *token)
 				}
 				else if(c == 'e' || c == 'E')
 				{
+					if(str.content[str.asize-1] == '.')
+					{
+						str_free(&str);
+						return ERROR_LEXICAL;
+					}
+					
 					if(!str_pushc(&str, c))
 						return ERROR_INTERNAL;
 					state = STATE_FLOAT_E;
 				}
+				else if(isalpha(c))
+					return ERROR_LEXICAL;
 				else
 				{
 					ungetc(c, _stream);
 					token->type = TypeFloat;
+
+					if(str.content[str.asize-1] == '.')
+					{
+						str_free(&str);
+						return ERROR_LEXICAL;
+					}
 
 					if (!(token->data = malloc(sizeof(double))))
 					{
@@ -644,10 +665,18 @@ int get_next_token(Token *token)
 					if(!str_pushc(&str, c))
 						return ERROR_INTERNAL;
 				}
+				else if(isalpha(c))
+					return ERROR_LEXICAL;
 				else
 				{
 					ungetc(c, _stream);
 					token->type = TypeFloat;
+
+					if(str.content[str.asize-1] == 'e' || str.content[str.asize-1] == 'E' || str.content[str.asize-1] == '+' || str.content[str.asize-1] == '-')
+					{
+						str_free(&str);
+						return ERROR_LEXICAL;
+					}
 
 					if (!(token->data = malloc(sizeof(double))))
 					{
@@ -670,14 +699,17 @@ int get_next_token(Token *token)
 	}
 
 #if defined(DEBUG) && DEBUG > 0
-	if(token->type == TypeString || token->type == TypeVariable || token->type == TypeKeyword || token->type == TypeDocString)
-		DEBUG_PRINT("Token type: %s | Token data: %s \n", type_names[token->type], (char*)token->data);
-	else if(token->type == TypeInt)
-		DEBUG_PRINT("Token type: %s | Token data: %i \n", type_names[token->type], *(int*)token->data);
-	else if(token->type == TypeFloat)
-		DEBUG_PRINT("Token type: %s | Token data: %f \n", type_names[token->type], *(double*)token->data);
-	else
-		DEBUG_PRINT("Token type: %s \n", type_names[token->type]);
+	if(c != EOF)
+	{
+		if(token->type == TypeString || token->type == TypeVariable || token->type == TypeKeyword || token->type == TypeDocString)
+			DEBUG_PRINT("Token type: %s | Token data: %s \n", type_names[token->type], (char*)token->data);
+		else if(token->type == TypeInt)
+			DEBUG_PRINT("Token type: %s | Token data: %i \n", type_names[token->type], *(int*)token->data);
+		else if(token->type == TypeFloat)
+			DEBUG_PRINT("Token type: %s | Token data: %f \n", type_names[token->type], *(double*)token->data);
+		else
+			DEBUG_PRINT("Token type: %s \n", type_names[token->type]);
+	}
 #endif
 
 	//eof in state, where it shouldnt be. isnt finished -> todo
@@ -687,4 +719,12 @@ int get_next_token(Token *token)
 		return EOF;
 	else
 		return NO_ERROR;
+}
+
+int get_next_token(Token *token)
+{
+	int ret = get_next_token_internal(token);
+	if(ret > 0)
+		exit(ret);
+	return ret;
 }

@@ -1,5 +1,6 @@
 #include "parser.h"
 #include "generator.h"
+#define BRACKET_RETURN 800
 
 
 #define GET_TOKEN_CHECK_EOF(token) \
@@ -153,6 +154,7 @@ int print_fct_call(Token *token, hSymtab *act_table){
 // Basic without expressions yet // add code generating
 int fction_call(Token *token, hSymtab *act_table, int in_function){
   Type prev;
+  fprintf(stderr, "a\n");
 
   if (!strcmp((char*)token->data, "print")) {
     err = print_fct_call(token, act_table);
@@ -169,7 +171,6 @@ int fction_call(Token *token, hSymtab *act_table, int in_function){
     }
 
     if (GET_TOKEN_CHECK_EOF(token) && TOKEN_TYPE_NEEDED_CHECK(token->type, TypeRightBracket)) {
-      fprintf(stderr, "\n");
       if (((hSymtab_Func*)tmp_item_func->data)->paramNum == 0) {
         return NO_ERROR;
       }
@@ -218,13 +219,16 @@ int fction_call(Token *token, hSymtab *act_table, int in_function){
       generate_fnc_pre_param();
 
       hSymtab_Func_Param *tmp_params = ((hSymtab_Func*)tmp_item_func->data)->params;
+      fprintf(stderr, "%d\n", ((hSymtab_Func*)tmp_item_func->data)->paramNum);
       if (((hSymtab_Func*)tmp_item_func->data)->paramNum == 0) {
-
         // SPATNE NEMUZE BYT EOF TODO
         if (GET_TOKEN_CHECK_EOF(token) || TOKEN_TYPE_NEEDED_CHECK(token->type, TypeRightBracket)) {
           //generete if there are no params
           generate_fnc_call(tmp_item_func->hKey);
           return NO_ERROR;
+        }
+        else {
+          return ERROR_SEMANTIC_FUNCTION_CALL;
         }
       }
       else {
@@ -310,7 +314,7 @@ int fction_call(Token *token, hSymtab *act_table, int in_function){
               if (token->type != tmp_params->param_type) {
 
                 //////////////TODO////////////////
-                return ERROR_SEMANTIC;
+                return ERROR_SEMANTIC_RUNTIME;
                 //////////////////////////////////
 
               }
@@ -406,7 +410,7 @@ int statement(Token *token, hSymtab *act_table){
   }
   else if (!strcmp((char*)token->data, "else")) {
     fprintf(stderr,"\t \tSENT TO GENERATOR: %s\n", (char*)token->data);
-    else_ = 1;
+    else_ = 0;
   }
   else {
     fprintf(stderr,"Error or not implemented yet\n");
@@ -503,7 +507,7 @@ int statement(Token *token, hSymtab *act_table){
 
 
 }
-  else if (else_ == 1 && token->type == TypeColon){
+  else if (else_ == 0 && token->type == TypeColon){
     if (GET_TOKEN_CHECK_EOF(token)) {
       DEBUG_PRINT("Reached EOF where it should not be. \n");
       return ERROR_SYNTAX;
@@ -564,7 +568,10 @@ int assignment(Token *var, Token *value, hSymtab *act_table, int in_function){
     }
     else
     {
+      if (symtab_it_position((char*)var->data, act_table)->item_type == IT_VAR)
         global = ((hSymtab_Var*)((*act_table)[symtab_hash_function((char*)var->data)]->data))->global;
+      else
+        return ERROR_SEMANTIC;
     }
 
     if (value->type == TypeVariable) {
@@ -583,6 +590,9 @@ int assignment(Token *var, Token *value, hSymtab *act_table, int in_function){
           }
 
             err = fction_call(value, act_table, in_function);
+            if (err != NO_ERROR) {
+              return err;
+            }
 
 
             generate_fnc_return_get(var->data, global);
@@ -598,8 +608,35 @@ int assignment(Token *var, Token *value, hSymtab *act_table, int in_function){
       }
     }
 
+    Token tmp_func = *value;
 
     err = expression(NULL ,value, (*act_table)[symtab_hash_function((char*)var->data)], act_table);
+
+
+    if (err == BRACKET_RETURN) {
+      err = fction_call(&tmp_func, act_table, in_function);
+
+      if (err != NO_ERROR) {
+        return err;
+      }
+
+      generate_fnc_return_get(var->data, global);
+
+      if (GET_TOKEN_CHECK_EOF(value)){
+        return NO_ERROR;
+      }
+
+      fprintf(stderr, "%s\n", operNamesP[value->type]);
+      if(!TOKEN_TYPE_NEEDED_CHECK(value->type, TypeNewLine)){
+        fprintf(stderr, "a\n");
+        return ERROR_SYNTAX;
+      }
+
+
+      ((hSymtab_Var*)((*act_table)[symtab_hash_function((char*)var->data)]->data))->defined = true;
+      return err;
+    }
+
     if (err != NO_ERROR) {
       return err;
     }
@@ -631,8 +668,8 @@ int command(Token *token, hSymtab *act_table, int in_function, int statement_swi
     }
 
 
-
     if (TOKEN_TYPE_NEEDED_CHECK(token_n.type, TypeAssignment)) {
+
 
       err = assignment(token, &token_n, act_table, in_function);
       if (in_function == 1 && !symtab_it_position((char*)token->data, table)) {
@@ -649,7 +686,6 @@ int command(Token *token, hSymtab *act_table, int in_function, int statement_swi
       return err;
     }
     else {
-
       err = expression(token, &token_n, NULL, act_table);
       return err;
     }
@@ -671,7 +707,7 @@ int command(Token *token, hSymtab *act_table, int in_function, int statement_swi
 
     int fction_start_return = fction_start(token, act_table);
     if(fction_start_return != NO_ERROR){
-      return err;
+      return fction_start_return;
     }
     //tady upravit aby prošlo, když vstupní kód končí definicí
     /*if (in_function == 1){
@@ -893,7 +929,8 @@ int fction_body(Token *token, hSymtab_it *symtab_it){
 
       while (strcmp((char*)token->data, "return") != 0) {
           if (err == NO_ERROR) {
-            if(command(token, &local_table, 1, 0) == ERROR_SYNTAX){
+            if((err = command(token, &local_table, 1, 0)) == ERROR_SYNTAX){
+              //fprintf(stderr, "%d\n", err);
               return ERROR_SYNTAX;
             }
             if (err != NO_ERROR) {
@@ -922,7 +959,6 @@ int fction_body(Token *token, hSymtab_it *symtab_it){
           }
 
       }
-      fprintf(stderr,"%s\n", operNamesP[token->type]);
       free(token->data);//smaze "return"
       if(indent_counter == dedent_counter){
         //doplnit return type
@@ -1153,7 +1189,7 @@ int prog() {
 
   if(GET_TOKEN_CHECK_EOF(&token)){
     DEBUG_PRINT("Test file is empty.\n");
-    return 0;
+    exit(NO_ERROR);
   }
 
   fct_predef_stack.top = malloc(sizeof(hSym_fct_node));
@@ -1174,6 +1210,7 @@ int prog() {
   generate_main_begin();
   body(&token, table);
   if (err == NO_ERROR){
+    fprintf(stderr, "%d\n", err);
     err = sym_stack_pop_all(fct_predef_stack.top, table);
   }
 

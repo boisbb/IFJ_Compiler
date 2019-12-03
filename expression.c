@@ -4,6 +4,8 @@
 #include "expression.h"
 #include "generator.h"
 #define P_SIZE 9
+#define BRACKET_RETURN 800
+
 
 hSymtab *s_table;
 TermStack expr_stack;
@@ -53,6 +55,7 @@ PRECED_TABLE_ITEM convert_token_type_to_prec_type(Token *token){
 
     case TypeOperatorMul:
     case TypeOperatorDiv:
+    case TypeOperatorFloorDiv:
       return OP_MULTDIV;
 
     case TypeEquality:
@@ -98,6 +101,13 @@ int expression(Token *pre_token, Token *act_token, hSymtab_it *p_variable, hSymt
   if (pre_token) {
     pre_tok = *pre_token;
   }
+
+  if ((convert_token_type_to_prec_type(&pre_tok) == IDENTIFIER) && convert_token_type_to_prec_type(&act_tok) != OP_PLUSMINUS &&
+      convert_token_type_to_prec_type(&act_tok) != OP_MULTDIV && convert_token_type_to_prec_type(&act_tok) != OP_REL && convert_token_type_to_prec_type(&act_tok) != OP_MULTDIVFLOOR) {
+    return ERROR_SYNTAX;
+  }
+
+  fprintf(stderr, "%s\n", (char*)act_tok.data);
   error = expression_eval(0, pre_token != NULL);
 
   free(expr_stack.top);
@@ -201,6 +211,20 @@ int expression_eval(int fction_switch, int pre_token_switch){
             }
           }
         }*/
+        if (act_tok.type == TypeVariable) {
+          if (!symtab_it_position((char*)act_tok.data, s_table)) {
+
+            if (get_next_token(&act_tok)) {
+              return ERROR_SEMANTIC;
+            }
+            if (act_tok.type == TypeLeftBracket) {
+              return BRACKET_RETURN;
+            }
+            else {
+              return ERROR_SEMANTIC;
+            }
+          }
+        }
 
         if ((error = s_push(&act_tok)) != NO_ERROR){
           fprintf(stderr, "%s\n", (char*)act_tok.data);
@@ -421,8 +445,10 @@ int ready_to_pop(int fction_switch){
       break;
 
     case OP_PLUSMINUS:
-      if((error = check_operators_and_operands_syntax(expr_stack.top->type, fction_switch)) != NO_ERROR)
+      if((error = check_operators_and_operands_syntax(expr_stack.top->type, fction_switch)) != NO_ERROR){
+        fprintf(stderr, "%d\n", error);
         return error;
+      }
 
       // GENERATE INSTRUCTION //
       fprintf(stderr,"\t \tSENT TO GENERATOR: %c\n", expr_stack.top->type == TypeOperatorPlus ? '+' : '-');
@@ -635,7 +661,7 @@ int check_operators_and_operands_syntax(Type operator, int fction_switch){
   else if((variable) && (operator == TypeEquality || operator == TypeUnEquality || operator == TypeGreater ||
       operator == TypeGreaterEq || operator == TypeLesser || operator == TypeLesserEq || operator == TypeNegation)){
     DEBUG_PRINT("SYNTAX ERROR: Boolop to be implemented.\n");
-    return ERROR_SYNTAX;
+    return ERROR_SEMANTIC_RUNTIME;
   }
   else if (l_operand.type == TypeInt && r_operand.type == TypeInt && operator != TypeOperatorDiv && operator != TypeOperatorFloorDiv) {
     // If variable is NULL, then the expression is part of if or while statement
@@ -648,7 +674,7 @@ int check_operators_and_operands_syntax(Type operator, int fction_switch){
     else if((variable) && (operator == TypeEquality || operator == TypeUnEquality || operator == TypeGreater ||
         operator == TypeGreaterEq || operator == TypeLesser || operator == TypeLesserEq || operator == TypeNegation)){
       DEBUG_PRINT("SYNTAX ERROR: Boolop to be implemented.\n");
-      return ERROR_SYNTAX;
+      return ERROR_SEMANTIC_RUNTIME;
     }
     else {
 
@@ -711,8 +737,8 @@ int check_operators_and_operands_syntax(Type operator, int fction_switch){
       param_type = TypeFloat;
     }
   } // When both operands are either Float or INT or any combination, there is no need to check syntax
-  else if ((l_operand.type == TypeFloat && r_operand.type == TypeInt) || (l_operand.type == TypeInt && r_operand.type == TypeFloat) ||
-            (l_operand.type == TypeFloat && r_operand.type == TypeFloat)){
+  else if (((l_operand.type == TypeFloat && r_operand.type == TypeInt) || (l_operand.type == TypeInt && r_operand.type == TypeFloat) ||
+            (l_operand.type == TypeFloat && r_operand.type == TypeFloat)) && operator != TypeOperatorFloorDiv){
 
     if(l_operand.type == TypeInt)
         generate_operation_retype_sec_int2float();
@@ -729,7 +755,7 @@ int check_operators_and_operands_syntax(Type operator, int fction_switch){
     else if(variable && (operator == TypeEquality || operator == TypeUnEquality || operator == TypeGreater ||
         operator == TypeGreaterEq || operator == TypeLesser || operator == TypeLesserEq || operator == TypeNegation)){
       DEBUG_PRINT("SYNTAX ERROR: Boolop to be implemented.\n");
-      return ERROR_SYNTAX;
+      return ERROR_SEMANTIC_RUNTIME;
     }
     else {
       result = TypeFloat;
@@ -751,10 +777,10 @@ int check_operators_and_operands_syntax(Type operator, int fction_switch){
     }
     generate_operation(operator); //generator
   }
-  else if (l_operand.type == TypeString && r_operand.type == TypeString){
+  else if (l_operand.type == TypeString && r_operand.type == TypeString && operator != TypeOperatorFloorDiv){
     if (operator != TypeOperatorPlus) {
       DEBUG_PRINT("SYNTAX ERROR: Incorrect operator or operand.\n");
-      return ERROR_SYNTAX;
+      return ERROR_SEMANTIC_RUNTIME;
     }
     result = TypeString;
     if (fction_switch != 1) {
@@ -805,7 +831,7 @@ int check_operators_and_operands_syntax(Type operator, int fction_switch){
   else {
     fprintf(stderr,"R: %s OP: %s R: %s\n", operNames_[r_operand.type], operNames_[operator],operNames_[r_operand.type]);
     DEBUG_PRINT("SYNTAX ERROR: Incorrect operator or operand.\n");
-    return ERROR_SYNTAX;
+    return ERROR_SEMANTIC_RUNTIME;
   }
 
   id_s_pop();

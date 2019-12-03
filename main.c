@@ -36,12 +36,18 @@ void print_sym_tab(hSymtab *table){
 
 int main() {
   int err = -1;
+  //Token token;
+  ///*while (*/fprintf(stderr, "%d\n", get_next_token(&token)); //!= EOF) {
+    //fprintf(stderr, "%s\n", operNames[token.type]);
+  //}
+
+  //exit(0);
   err = prog();
   if (err != NO_ERROR) {
-    //DEBUG_PRINT("_____PARSING ENDED WITH ERROR %d_____\n", err);
+      fprintf(stderr, "%d\n", err);
+    DEBUG_PRINT("_____PARSING ENDED WITH ERROR %d_____\n", err);
     return err;
   }
-  //fprintf(stderr, "a\n");
   //print_sym_tab(table);
 
   if (err == NO_ERROR){
@@ -49,8 +55,8 @@ int main() {
   }
   generator_free();
 
-  //fprintf(stderr,"\n");
-  //DEBUG_PRINT("_____PARSING ENDED SUCCESSFULLY_____\n");
+  fprintf(stderr,"\n");
+  DEBUG_PRINT("_____PARSING ENDED SUCCESSFULLY_____\n");
   free_symtab(table, 0);
   free(table);
 

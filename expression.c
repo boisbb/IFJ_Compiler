@@ -638,6 +638,8 @@ int check_operators_and_operands_syntax(Type operator, int fction_switch){
   if((!variable) && (operator == TypeEquality || operator == TypeUnEquality || operator == TypeGreater ||
       operator == TypeGreaterEq || operator == TypeLesser || operator == TypeLesserEq || operator == TypeNegation)){
 
+    fprintf(stderr, "CHECK\n");
+
     if ((l_operand.type == TypeInt && r_operand.type == TypeInt) || (l_operand.type == TypeFloat && r_operand.type == TypeFloat) || (l_operand.type == TypeInt &&
          r_operand.type == TypeFloat) || (l_operand.type == TypeFloat && r_operand.type == TypeInt) || (l_operand.type == TypeString && r_operand.type == TypeString)) {
        id_s_pop();
@@ -646,13 +648,15 @@ int check_operators_and_operands_syntax(Type operator, int fction_switch){
     }
     else if (l_operand.type == TypeUnspecified){
 
-      // TODO
+
+      return NO_ERROR;
 
     }
     else if (r_operand.type == TypeUnspecified){
 
       // TODO
 
+      return NO_ERROR;
     }
     else {
       return ERROR_SYNTAX;

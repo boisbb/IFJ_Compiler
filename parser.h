@@ -42,9 +42,9 @@ int body(Token *token, hSymtab *table);
 
 int fction_call(Token *token, hSymtab *act_table, int in_function);
 
-int statement(Token *token, hSymtab *act_table);
+int statement(Token *token, hSymtab *act_table, int in_function);
 
-int statement_body(Token *token, hSymtab *act_table);
+int statement_body(Token *token, hSymtab *act_table, int in_function);
 
 int command(Token *token, hSymtab *act_table, int in_function, int statement_switch);
 

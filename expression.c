@@ -107,7 +107,7 @@ int expression(Token *pre_token, Token *act_token, hSymtab_it *p_variable, hSymt
     return ERROR_SYNTAX;
   }
 
-  fprintf(stderr, "%s\n", (char*)act_tok.data);
+  //fprintf(stderr, "%s\n", (char*)act_tok.data); SEG FAULT
   error = expression_eval(0, pre_token != NULL);
 
   free(expr_stack.top);
@@ -818,15 +818,11 @@ int check_operators_and_operands_syntax(Type operator, int fction_switch){
       param_type = TypeUnspecified;
     }
     //generate_operation(operator); //generator
-    char uql[MAX_DIGITS_DOUBLE];
-    generate_unique_label(uql, LABEL_CONTROL);
-    generate_operation_unspecified(uql, operator); //generator TODO
+    generate_operation_unspecified(operator); //generator TODO
   }
   else if(r_operand.type == TypeUnspecified && l_operand.type == TypeUnspecified)
   {
-      char uql[MAX_DIGITS_DOUBLE];
-      generate_unique_label(uql, LABEL_CONTROL);
-      generate_operation_unspecified(uql, operator); //generator
+      generate_operation_unspecified(operator); //generator
   }
   else {
     fprintf(stderr,"R: %s OP: %s R: %s\n", operNames_[r_operand.type], operNames_[operator],operNames_[r_operand.type]);

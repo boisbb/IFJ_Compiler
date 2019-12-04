@@ -18,6 +18,12 @@ size_t control_label_counter = 0;
 #define ADD_LINE(line) \
 	ADD_CODE(line "\n")
 
+#define GET_POS() \
+	(inside_fnc ? fnc.asize : code.asize)
+
+#define INSERT_CODE(str, pos) \
+	(inside_fnc ? str_insert(&fnc, (pos), (str)) : str_insert(&code, (pos), (str)))
+
 static inline bool get_str_from_index(char* str, unsigned index)
 {
 	return sprintf(str, "%d", index) > 0;
@@ -186,6 +192,14 @@ bool generate_var_declaration(char* label, bool scope)
 		ADD_CODE("\n");
 }
 
+bool generate_var_declaration_on_pos(char* label, bool scope, size_t pos)
+{
+	return
+		INSERT_CODE("\n", pos) &&
+		INSERT_CODE(label, pos) &&
+		(scope ? INSERT_CODE("DEFVAR GF@", pos) : INSERT_CODE("DEFVAR LF@", pos));
+}
+
 bool generate_var_definition(char* label, bool scope, Type type, void* data)
 {
 	return
@@ -206,13 +220,14 @@ bool generate_push_var(char* label, bool scope)
 	return
 		(scope ? ADD_CODE("PUSHS GF@") : ADD_CODE("PUSHS LF@")) && ADD_CODE(label) && ADD_CODE("\n");
 }
-bool generate_push_var_unspecified(char* label, char* var_label, bool scope, Type type)
+bool generate_push_var_unspecified(char* var_label, bool scope, Type type)
 {
-	bool ret;
+	char label[MAX_DIGITS_DOUBLE];
+	bool ret = generate_unique_label(label, LABEL_CONTROL);
 	switch(type)
 	{
 		case TypeString:
-			ret =
+			ret &=
 			ADD_CODE("TYPE GF@%stmp1%type ") && (scope ? ADD_CODE("GF@") : ADD_CODE("LF@")) && ADD_CODE(var_label) && ADD_CODE("\n") &&
 			ADD_CODE("JUMPIFEQ $") && ADD_CODE(label) && ADD_CODE("%") && ADD_CODE("string GF@%stmp1%type string@string\n") &&
 			ADD_CODE("EXIT int@") && ADD_CODE(STR(ERROR_SEMANTIC_RUNTIME)) && ADD_CODE("\n") &&
@@ -220,7 +235,7 @@ bool generate_push_var_unspecified(char* label, char* var_label, bool scope, Typ
 			ADD_CODE("PUSHS ") && (scope ? ADD_CODE("GF@") : ADD_CODE("LF@")) && ADD_CODE(var_label) && ADD_CODE("\n");
 			break;
 		case TypeInt:
-			ret =
+			ret &=
 			ADD_CODE("TYPE GF@%stmp1%type ") && (scope ? ADD_CODE("GF@") : ADD_CODE("LF@")) && ADD_CODE(var_label) && ADD_CODE("\n") &&
 			ADD_CODE("JUMPIFEQ $") && ADD_CODE(label) && ADD_CODE("%") && ADD_CODE("int GF@%stmp1%type string@int\n") &&
 			ADD_CODE("JUMPIFEQ $") && ADD_CODE(label) && ADD_CODE("%") && ADD_CODE("float GF@%stmp1%type string@float\n") &&
@@ -234,7 +249,7 @@ bool generate_push_var_unspecified(char* label, char* var_label, bool scope, Typ
 			ADD_CODE("LABEL $") && ADD_CODE(label) && ADD_CODE("%") && ADD_CODE("end\n");
 			break;
 		case TypeFloat:
-			ret =
+			ret &=
 			ADD_CODE("TYPE GF@%stmp1%type ") && (scope ? ADD_CODE("GF@") : ADD_CODE("LF@")) && ADD_CODE(var_label) && ADD_CODE("\n") &&
 			ADD_CODE("JUMPIFEQ $") && ADD_CODE(label) && ADD_CODE("%") && ADD_CODE("int GF@%stmp1%type string@int\n") &&
 			ADD_CODE("JUMPIFEQ $") && ADD_CODE(label) && ADD_CODE("%") && ADD_CODE("float GF@%stmp1%type string@float\n") &&
@@ -257,6 +272,7 @@ bool generate_push_var_unspecified(char* label, char* var_label, bool scope, Typ
 bool generate_operation(Type type)
 {
 	bool ret;
+	char uql[MAX_DIGITS_DOUBLE];
 	switch(type)
 	{
 		case TypeOperatorPlus:
@@ -272,17 +288,22 @@ bool generate_operation(Type type)
 			ADD_LINE("MULS");
 			break;
 		case TypeOperatorDiv:
-			ret =
+			ret = generate_unique_label(uql, LABEL_CONTROL) &&
+			ADD_LINE("POPS GF@%stmp1") &&
+			ADD_CODE("JUMPIFNEQ $") && ADD_CODE(uql) && ADD_CODE("$zero GF@%stmp1 float@0x0p+0\n") &&
+			ADD_CODE("EXIT int@") && ADD_CODE(STR(ERROR_DIV_BY_NULL)) && ADD_CODE("\n") &&
+			ADD_CODE("LABEL $") && ADD_CODE(uql) && ADD_CODE("$zero\n") &&
+			ADD_LINE("PUSHS GF@%stmp1") &&
 			ADD_LINE("DIVS");
 			break;
 		case TypeOperatorFloorDiv:
-			ret =
+			ret = generate_unique_label(uql, LABEL_CONTROL) &&
 			ADD_LINE("POPS GF@%stmp1") &&
-			ADD_LINE("INT2FLOATS") &&
+			ADD_CODE("JUMPIFNEQ $") && ADD_CODE(uql) && ADD_CODE("$zero GF@%stmp1 int@0\n") &&
+			ADD_CODE("EXIT int@") && ADD_CODE(STR(ERROR_DIV_BY_NULL)) && ADD_CODE("\n") &&
+			ADD_CODE("LABEL $") && ADD_CODE(uql) && ADD_CODE("$zero\n") &&
 			ADD_LINE("PUSHS GF@%stmp1") &&
-			ADD_LINE("INT2FLOATS") &&
-			ADD_LINE("DIVS") &&
-			ADD_LINE("FLOAT2INTS");
+			ADD_LINE("IDIVS");
 			break;
 		case TypeEquality:
 			ret =
@@ -341,9 +362,10 @@ bool generate_operation_concat()
 		ADD_LINE("PUSHS GF@%stmp2");
 }
 
-bool generate_operation_unspecified(char* label, Type operation)
+bool generate_operation_unspecified(Type operation)
 {
-	bool ret =
+	char label[MAX_DIGITS_DOUBLE];
+	bool ret = generate_unique_label(label, LABEL_CONTROL) &&
 	ADD_LINE("POPS GF@%stmp1") &&
 	ADD_LINE("POPS GF@%stmp2") &&
 	ADD_LINE("TYPE GF@%stmp1%type GF@%stmp1") &&
@@ -476,10 +498,9 @@ bool generate_pop_return()
 		ADD_LINE("POPS LF@%retval");
 }
 
-bool generate_if_begin(char* label, unsigned index)
+bool generate_if_begin(char* label)
 {
-	char tmp[MAX_DIGITS_DOUBLE];
-	return get_str_from_index(tmp, index) &&
+	return
 		ADD_LINE("# If BEGIN") &&
 		ADD_LINE("TYPE GF@%exp_result%type GF@%exp_result") &&
 		ADD_CODE("JUMPIFEQ $") && ADD_CODE(label) && ADD_CODE("%begin GF@%exp_result%type string@bool\n") &&
@@ -501,27 +522,28 @@ bool generate_if_begin(char* label, unsigned index)
 		ADD_LINE("NOT GF@%exp_result GF@%exp_result") &&
 
 		ADD_CODE("LABEL $") && ADD_CODE(label) && ADD_CODE("%begin\n") &&
-		ADD_CODE("JUMPIFEQ $") && ADD_CODE(label) && ADD_CODE("%") && ADD_CODE(tmp) &&  ADD_CODE(" GF@%exp_result bool@false\n");
+		ADD_CODE("JUMPIFEQ $") && ADD_CODE(label) && ADD_CODE("%ifend GF@%exp_result bool@false\n");
 }
-bool generate_else(char* label, unsigned index)
+bool generate_else(char* label)
 {
-	char tmp[MAX_DIGITS_DOUBLE];
-	char tmp2[MAX_DIGITS_DOUBLE];
-	return index > 0 && get_str_from_index(tmp, index) && get_str_from_index(tmp2, index+1) &&
-		ADD_CODE("JUMP ") && ADD_CODE(label) && ADD_CODE("%") && ADD_CODE(tmp2) && ADD_CODE("\n") &&
+	return
+		ADD_CODE("JUMP ") && ADD_CODE(label) && ADD_CODE("%end\n") &&
 		ADD_LINE("# Else") &&
-		ADD_CODE("LABEL $") && ADD_CODE(label) && ADD_CODE("%") && ADD_CODE(tmp) && ADD_CODE("\n");
+		ADD_CODE("LABEL $") && ADD_CODE(label) && ADD_CODE("%else\n");
 }
-bool generate_if_end(char* label, unsigned index)
+bool generate_if_end(char* label, bool has_else)
 {
-	char tmp[MAX_DIGITS_DOUBLE];
-	return get_str_from_index(tmp, index) &&
-		ADD_CODE("LABEL $") && ADD_CODE(label) && ADD_CODE("%") && ADD_CODE(tmp) && ADD_CODE("\n") &&
+	return
+		ADD_CODE("JUMP ") && ADD_CODE(label) && ADD_CODE("%end\n") &&
+		ADD_CODE("LABEL $") && ADD_CODE(label) && ADD_CODE("%ifend\n") &&
+		(has_else ? (ADD_CODE("JUMP ") && ADD_CODE(label) && ADD_CODE("%else\n")) : 1) &&
+		ADD_CODE("LABEL $") && ADD_CODE(label) && ADD_CODE("%end\n") &&
 		ADD_LINE("# If END");
 }
 
-bool generate_while_begin(char* label)
+bool generate_while_begin(char* label, size_t* pos)
 {
+	*pos = GET_POS();
 	return
 		ADD_LINE("# While BEGIN") &&
 		ADD_CODE("LABEL $") && ADD_CODE(label) && ADD_CODE("%begin\n");

@@ -1,7 +1,7 @@
 #include "strings.h"
 #include <malloc.h>
 
-#define STR_SIZE 8
+#define STR_SIZE 128
 
 static inline size_t align_size(size_t size)
 {
@@ -63,6 +63,27 @@ int str_push(String *str, const char *new_str)
 	strcat(str->content, new_str);
 	str->asize += str_size;
 	return 1;
+}
+
+int str_insert(String *str, size_t pos, const char *new_str)
+{
+    if (str->size < str->asize)
+		return 0;
+
+    size_t str_size = strlen(new_str);
+
+    if (str->size < str->asize + 1 + str_size)
+	{
+		size_t new_size = align_size(str_size + 1);
+		if ((str->content = realloc(str->content, str->size + new_size)) == NULL)
+			return 0;
+		str->size += new_size;
+	}
+
+    memmove(str->content + pos + str_size, str->content + pos, str->asize - pos + 1);
+    memcpy(str->content + pos, new_str, str_size);
+    str->asize += str_size;
+    return str_size;
 }
 
 char str_pop(String *str)

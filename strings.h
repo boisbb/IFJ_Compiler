@@ -24,6 +24,9 @@ int str_pushc(String *str, char new_char);
 // Append string
 int str_push(String *str, const char *new_str);
 
+// Insert new string to pos
+int str_insert(String *str, size_t pos, const char *new_str);
+
 // Delete last char, return that char
 char str_pop(String *str);
 

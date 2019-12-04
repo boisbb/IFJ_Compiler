@@ -30,6 +30,8 @@ bool generate_main_end();
 
 // Define var fo future use
 bool generate_var_declaration(char* label, bool scope);
+// Define var on pos
+bool generate_var_declaration_on_pos(char* label, bool scope, size_t pos);
 // Set var data
 bool generate_var_definition(char* label, bool scope, Type type, void* data);
 
@@ -38,11 +40,11 @@ bool generate_push_data(Type type, void* data);
 // Push var to stack
 bool generate_push_var(char* label, bool scope);
 // Generate type control then push var to stack
-bool generate_push_var_unspecified(char* label, char* var_label, bool scope, Type type);
+bool generate_push_var_unspecified(char* var_label, bool scope, Type type);
 // Do operation on stack
 bool generate_operation(Type operation);
 // Call instead of generate_operation when both operands are TypeUnspecified
-bool generate_operation_unspecified(char* label, Type operation);
+bool generate_operation_unspecified(Type operation);
 // Concat two strings on stack
 bool generate_operation_concat();
 // Retype value on stack top from int to float
@@ -60,14 +62,11 @@ bool generate_pop_exp();
 // Pops result to return value
 bool generate_pop_return();
 
-// If not true jumps on index
-bool generate_if_begin(char* label, unsigned index);
-// You can choose index for else, but cant be 0, bcs 0 is end
-bool generate_else(char* label, unsigned index);
-// index = 0
-bool generate_if_end(char* label, unsigned index);
+bool generate_if_begin(char* label);
+bool generate_else(char* label);
+bool generate_if_end(char* label, bool has_else);
 
-bool generate_while_begin(char* label);
+bool generate_while_begin(char* label, size_t* pos);
 bool generate_while_loop(char* label);
 bool generate_while_end(char* label);
 

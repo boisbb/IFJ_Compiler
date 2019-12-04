@@ -427,6 +427,7 @@ int statement(Token *token, hSymtab *act_table){
       TOKEN_TYPE_NEEDED_CHECK(token->type, TypeVariable) || TOKEN_TYPE_NEEDED_CHECK(token->type, TypeLeftBracket)) {
 
     char uql[MAX_DIGITS_DOUBLE];
+    size_t pos;
       if (else_ == 1)
       {
           char uql[MAX_DIGITS_DOUBLE];
@@ -436,7 +437,7 @@ int statement(Token *token, hSymtab *act_table){
       {
         char uql[MAX_DIGITS_DOUBLE];
         generate_unique_label(uql, LABEL_WHILE);
-        generate_while_begin(uql);
+        generate_while_begin(uql, &pos);
       }
 
       fprintf(stderr, "%d\n", err);
@@ -470,7 +471,7 @@ int statement(Token *token, hSymtab *act_table){
 
     if (else_ == 1)
     {
-        generate_if_begin(uql, 1);
+        generate_if_begin(uql);
     }
     else if(else_ == -1)
     {
@@ -496,7 +497,7 @@ int statement(Token *token, hSymtab *act_table){
 
     if (else_ == 1)
     {
-        generate_if_end(uql, else_);
+        generate_if_end(uql, false);
     }
     else if(else_ == -1)
     {
@@ -1185,13 +1186,6 @@ int prog() {
   scanner_init();
   generator_init();
 
-
-
-  if(GET_TOKEN_CHECK_EOF(&token)){
-    DEBUG_PRINT("Test file is empty.\n");
-    exit(NO_ERROR);
-  }
-
   fct_predef_stack.top = malloc(sizeof(hSym_fct_node));
   if (!fct_predef_stack.top) {
     return ERROR_INTERNAL;
@@ -1208,6 +1202,13 @@ int prog() {
 
   //proc to bylo driv tak slozite?
   generate_main_begin();
+
+  if(GET_TOKEN_CHECK_EOF(&token)){
+      DEBUG_PRINT("Test file is empty.\n");
+      generate_main_end();
+      return NO_ERROR;
+  }
+
   body(&token, table);
   if (err == NO_ERROR){
     fprintf(stderr, "%d\n", err);

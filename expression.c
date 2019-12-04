@@ -640,20 +640,29 @@ int check_operators_and_operands_syntax(Type operator, int fction_switch){
 
     fprintf(stderr, "CHECK\n");
 
-    if ((l_operand.type == TypeInt && r_operand.type == TypeInt) || (l_operand.type == TypeFloat && r_operand.type == TypeFloat) || (l_operand.type == TypeInt &&
-         r_operand.type == TypeFloat) || (l_operand.type == TypeFloat && r_operand.type == TypeInt) || (l_operand.type == TypeString && r_operand.type == TypeString)) {
+    if (l_operand.type == r_operand.type) {
        id_s_pop();
        generate_operation(operator); //generator
        return NO_ERROR;
     }
+    else if ((l_operand.type == TypeInt && r_operand.type == TypeFloat)) {
+      generate_operation_retype_sec_int2float();
+      generate_operation(operator);
+      return NO_ERROR;
+    }
+    else if ((l_operand.type == TypeFloat && r_operand.type == TypeInt)) {
+      generate_operation_retype_first_int2float();
+      generate_operation(operator);
+      return NO_ERROR;
+    }
     else if (l_operand.type == TypeUnspecified){
 
-
+      generate_operation_unspecified(operator);
       return NO_ERROR;
 
     }
     else if (r_operand.type == TypeUnspecified){
-
+      generate_operation_unspecified(operator);
       // TODO
 
       return NO_ERROR;

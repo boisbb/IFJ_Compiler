@@ -62,7 +62,7 @@ bool generate_pop_exp();
 // Pops result to return value
 bool generate_pop_return();
 
-bool generate_if_begin(char* label);
+bool generate_if_begin(char* label, size_t* pos);
 bool generate_else(char* label);
 bool generate_if_end(char* label, bool has_else);
 

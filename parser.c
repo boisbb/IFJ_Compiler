@@ -479,7 +479,7 @@ int statement(Token *token, hSymtab *act_table, int in_function){
 
     if (if_)
     {
-        generate_if_begin(uql);
+        generate_if_begin(uql, &pos);
     }
     else if(while_)
     {

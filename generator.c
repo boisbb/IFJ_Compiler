@@ -498,8 +498,9 @@ bool generate_pop_return()
 		ADD_LINE("POPS LF@%retval");
 }
 
-bool generate_if_begin(char* label)
+bool generate_if_begin(char* label, size_t* pos)
 {
+	*pos = GET_POS();
 	return
 		ADD_LINE("# If BEGIN") &&
 		ADD_LINE("TYPE GF@%exp_result%type GF@%exp_result") &&

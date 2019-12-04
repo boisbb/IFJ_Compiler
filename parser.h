@@ -44,10 +44,10 @@ int fction_call(Token *token, hSymtab *act_table, int in_function);
 
 int statement(Token *token, hSymtab *act_table, int in_function);
 
-int statement_body(Token *token, hSymtab *act_table, int in_function);
+int statement_body(Token *token, hSymtab *act_table, int in_function, size_t pos);
 
-int command(Token *token, hSymtab *act_table, int in_function, int statement_switch);
+int command(Token *token, hSymtab *act_table, int in_function, int statement_switch, size_t pos);
 
 int prog();
 
-int assignment(Token *var, Token *value, hSymtab *act_table, int in_function);
+int assignment(Token *var, Token *value, hSymtab *act_table, int in_function, size_t pos);

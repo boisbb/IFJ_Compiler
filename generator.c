@@ -527,16 +527,16 @@ bool generate_if_begin(char* label)
 bool generate_else(char* label)
 {
 	return
-		ADD_CODE("JUMP ") && ADD_CODE(label) && ADD_CODE("%end\n") &&
+		ADD_CODE("JUMP $") && ADD_CODE(label) && ADD_CODE("%end\n") &&
 		ADD_LINE("# Else") &&
 		ADD_CODE("LABEL $") && ADD_CODE(label) && ADD_CODE("%else\n");
 }
 bool generate_if_end(char* label, bool has_else)
 {
 	return
-		ADD_CODE("JUMP ") && ADD_CODE(label) && ADD_CODE("%end\n") &&
+		ADD_CODE("JUMP $") && ADD_CODE(label) && ADD_CODE("%end\n") &&
 		ADD_CODE("LABEL $") && ADD_CODE(label) && ADD_CODE("%ifend\n") &&
-		(has_else ? (ADD_CODE("JUMP ") && ADD_CODE(label) && ADD_CODE("%else\n")) : 1) &&
+		(has_else ? (ADD_CODE("JUMP $") && ADD_CODE(label) && ADD_CODE("%else\n")) : 1) &&
 		ADD_CODE("LABEL $") && ADD_CODE(label) && ADD_CODE("%end\n") &&
 		ADD_LINE("# If END");
 }

@@ -367,7 +367,7 @@ int fction_call(Token *token, hSymtab *act_table, int in_function){
 }
 
 
-int statement_body(Token *token, hSymtab *act_table, int in_function, size_t pos){
+int statement_body(Token *token, hSymtab *act_table, int in_function, char* fction_name, size_t pos){
 
   if (GET_TOKEN_CHECK_EOF(token)) {
     DEBUG_PRINT("Reached EOF successfully\n");
@@ -375,7 +375,7 @@ int statement_body(Token *token, hSymtab *act_table, int in_function, size_t pos
   }
 
   while (token->type != TypeDedend) {
-    fprintf(stderr, "%s\n", operNamesP[token->type]);
+    //fprintf(stderr, "%s\n", operNamesP[token->type]);
 
 
     if (TOKEN_TYPE_NEEDED_CHECK(token->type, TypeDedend)) {
@@ -383,16 +383,35 @@ int statement_body(Token *token, hSymtab *act_table, int in_function, size_t pos
       return NO_ERROR;
     }
 
-    err = command(token, act_table, in_function, 1, pos);
+    fprintf(stderr, "%s\n", operNamesP[token->type]);
+
+    err = command(token, act_table, in_function, fction_name, 1, pos);
 
     if (err != NO_ERROR) {
       return err;
     }
 
+    if (token->type == TypeDedend){
+
+      if (GET_TOKEN_CHECK_EOF(token)) {
+        DEBUG_PRINT("Reached EOF successfully\n");
+        return NO_ERROR;
+      }
+
+      if (!strcmp((char*)token->data, "else")) {
+        return NO_ERROR;
+      }
+
+      continue;
+    }
+
+
+
     if (GET_TOKEN_CHECK_EOF(token)) {
       DEBUG_PRINT("Reached EOF successfully\n");
       return NO_ERROR;
     }
+
   }
 
 
@@ -400,7 +419,7 @@ int statement_body(Token *token, hSymtab *act_table, int in_function, size_t pos
 }
 
 
-int statement(Token *token, hSymtab *act_table, int in_function, size_t pos){
+int statement(Token *token, hSymtab *act_table, int in_function, char* fction_name, size_t pos){
   bool else_ = false;
   bool if_ = false;
   bool while_ = false;
@@ -492,19 +511,22 @@ int statement(Token *token, hSymtab *act_table, int in_function, size_t pos){
         pos = pos_tmp;
     }
 
-    err = statement_body(token, act_table, in_function, pos);
+    err = statement_body(token, act_table, in_function, fction_name, pos);
 
     if(err)
         return err;
 
-    if(GET_TOKEN_CHECK_EOF(token)){
-      return NO_ERROR;
+
+    if (strcmp((char*)token->data, "else")){
+      if(GET_TOKEN_CHECK_EOF(token)){
+        return NO_ERROR;
+      }
     }
 
 
 
 
-    fprintf(stderr, "%s %s\n", (char*)token->data, operNamesP[token->type]);
+    //fprintf(stderr, "%s %s\n", (char*)token->data, operNamesP[token->type]);
 
     if (!strcmp((char*)token->data, "else")) {
       if (if_) {
@@ -535,7 +557,7 @@ int statement(Token *token, hSymtab *act_table, int in_function, size_t pos){
           return ERROR_SYNTAX;
         }
 
-        err = statement_body(token, act_table, in_function, pos);
+        err = statement_body(token, act_table, in_function, fction_name, pos);
 
         if (err != NO_ERROR) {
           return err;
@@ -557,7 +579,14 @@ int statement(Token *token, hSymtab *act_table, int in_function, size_t pos){
           generate_while_end(uql);
       }
 
-      err = command(token, act_table, in_function, in_function, 0);
+      if (token->type == TypeDedend) {
+        return NO_ERROR;
+      }
+
+
+      fprintf(stderr, "err: %d\n", err);
+      err = command(token, act_table, in_function, fction_name, in_function, 0);
+      fprintf(stderr, "err1: %d\n", err);
       return err;
     }
 
@@ -746,7 +775,7 @@ int assignment(Token *var, Token *value, hSymtab *act_table, int in_function, si
 }
 
 
-int command(Token *token, hSymtab *act_table, int in_function, int statement_switch, size_t pos){
+int command(Token *token, hSymtab *act_table, int in_function, char* fction_name, int statement_switch, size_t pos){
 
   //fprintf(stderr, "%s\n", operNamesP[token->type]);
 
@@ -825,11 +854,12 @@ int command(Token *token, hSymtab *act_table, int in_function, int statement_swi
 
       err = expression(NULL, token, NULL, act_table);
       generate_pop_return();
+      generate_fnc_return(fction_name);
 
       return err;
     }
 
-    err = statement(token, act_table, in_function, pos);
+    err = statement(token, act_table, in_function, fction_name, pos);
     return err;
   }
   else if (token->type == TypeDocString){
@@ -856,7 +886,7 @@ int command(Token *token, hSymtab *act_table, int in_function, int statement_swi
 int body(Token *token, hSymtab *act_table){
   while (1) {
       if (err == NO_ERROR) {
-        err = command(token, act_table, 0, 0, 0);
+        err = command(token, act_table, 0, NULL, 0, 0);
 
 
         if (err == ERROR_SYNTAX || err == ERROR_SEMANTIC) {
@@ -1009,6 +1039,7 @@ int fction_body(Token *token, hSymtab_it *symtab_it){
 
   //to copy params to local_table
   hSymtab_Func_Param *params = NULL;
+  DEBUG_PRINT("FCTION NAME: %s\n", symtab_it->hKey);
   params = ((hSymtab_Func *)(symtab_it->data))->params;
   Token param;
 
@@ -1030,7 +1061,7 @@ int fction_body(Token *token, hSymtab_it *symtab_it){
 
       while (strcmp((char*)token->data, "return") != 0) {
           if (err == NO_ERROR) {
-            if((err = command(token, &local_table, 1, 0, 0)) == ERROR_SYNTAX){
+            if((err = command(token, &local_table, 1, symtab_it->hKey, 0, 0)) == ERROR_SYNTAX){
               //fprintf(stderr, "%d\n", err);
               return ERROR_SYNTAX;
             }
@@ -1097,6 +1128,7 @@ int fction_body(Token *token, hSymtab_it *symtab_it){
             //add return type
             err = expression(NULL, token, symtab_it, &local_table);
             generate_pop_return();
+            generate_fnc_return(symtab_it->hKey);
             free(token->data);//po zjisteni varu nazev smaze
             free_symtab(&local_table, 1);
             return 1000;

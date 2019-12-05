@@ -416,15 +416,11 @@ int ready_to_pop(int fction_switch){
             */
           }
           break;
-        case TypeKeywordNone:
-          // GENERATE FOR NONE TODO
 
-          id_s_push(expr_stack.top);
-
-          break;
         case TypeFloat:
         case TypeInt:
         case TypeString:
+        case TypeKeywordNone:
 
           /*// GENERATE INSTRUCTION //
           if (expr_stack.top->type == TypeInt)
@@ -643,8 +639,15 @@ int check_operators_and_operands_syntax(Type operator, int fction_switch){
 
   DEBUG_PRINT("L: %s O: %s R: %s", operNames_[l_operand.type], operNames_[operator], operNames_[r_operand.type]);
 
-  if (r_operand.type == TypeKeywordNone) {
-    fprintf(stderr, "got here\n");
+  if (r_operand.type == TypeKeywordNone || l_operand.type == TypeKeywordNone) {
+    if (operator == TypeEquality || operator == TypeUnEquality) {
+      id_s_pop();
+      generate_operation(operator); //generator
+      return NO_ERROR;
+    }
+    else {
+      return ERROR_SEMANTIC_RUNTIME;
+    }
   }
 
 
@@ -701,7 +704,7 @@ int check_operators_and_operands_syntax(Type operator, int fction_switch){
     DEBUG_PRINT("SYNTAX ERROR: Boolop to be implemented.\n");
     return ERROR_SEMANTIC_RUNTIME;
   }
-  else if (l_operand.type == TypeInt && r_operand.type == TypeInt && operator != TypeOperatorDiv && operator != TypeOperatorFloorDiv) {
+  else if (l_operand.type == TypeInt && r_operand.type == TypeInt && operator != TypeOperatorDiv) {
     // If variable is NULL, then the expression is part of if or while statement
     if((!variable) && (operator == TypeEquality || operator == TypeUnEquality || operator == TypeGreater ||
         operator == TypeGreaterEq || operator == TypeLesser || operator == TypeLesserEq || operator == TypeNegation)){

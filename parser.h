@@ -26,7 +26,7 @@ typedef struct pr_Stack {
   unsigned size;
 } Print_Stack;
 
-int print_fct_call(Token *token, hSymtab *act_table);
+int print_fct_call(Token *token, hSymtab *act_table, int in_function);
 //int print_stack_push(Token *token);
 
 //int print_stack_pop_all();

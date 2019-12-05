@@ -53,7 +53,7 @@ int no_ret_flag;
 hSym_fct_stack fct_predef_stack;
 
 
-int print_fct_call(Token *token, hSymtab *act_table){
+int print_fct_call(Token *token, hSymtab *act_table, int in_function){
   Print_Stack p_stack;
   p_stack.top = -1;
   Type prev = TypeComma;
@@ -129,7 +129,7 @@ int print_fct_call(Token *token, hSymtab *act_table){
   while(p_stack.top != -1){
     switch (p_stack.term[p_stack.top].type) {
       case TypeVariable:
-        generate_push_var(p_stack.term[p_stack.top].data, 1);
+        generate_push_var(p_stack.term[p_stack.top].data, !in_function);
         p_stack.top--;
         break;
 
@@ -157,7 +157,7 @@ int fction_call(Token *token, hSymtab *act_table, int in_function){
   fprintf(stderr, "a\n");
 
   if (!strcmp((char*)token->data, "print")) {
-    err = print_fct_call(token, act_table);
+    err = print_fct_call(token, act_table, in_function);
     return err;
 
   }

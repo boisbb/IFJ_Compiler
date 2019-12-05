@@ -77,6 +77,7 @@ bool generate_fnc_param_get(char* label, unsigned index);
 bool generate_fnc_return_set_data(Type type, void* data);
 // Set return var as var
 bool generate_fnc_return_set_var(char* label, bool scope);
+bool generate_fnc_return(char* label);
 bool generate_fnc_end(char* label);
 
 // Must be called before param_set or call

@@ -611,6 +611,11 @@ bool generate_fnc_return_set_var(char* label, bool scope)
 	return
 		(scope ? ADD_CODE("MOVE LF@%retval GF@") : ADD_CODE("MOVE LF@%retval LF@")) && ADD_CODE(label) && ADD_CODE("\n");
 }
+bool generate_fnc_return(char* label)
+{
+	return
+		ADD_CODE("JUMP $") && ADD_CODE(label) && ADD_CODE("%return\n");
+}
 
 bool generate_fnc_end(char* label)
 {

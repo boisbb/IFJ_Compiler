@@ -34,22 +34,9 @@ if [ "$#" == 2 ]; then
     if [[ "$needed_exit" == "$retval" ]]; then
       echo -e "$(realpath "$file") ${GREEN}PASSED${NC}"
     else
-      echo -e "$(realpath "$file") ${RED}FAILED${NC}"
+      echo -e "$(realpath "$file") ${RED}FAILED${NC} | ${GREEN}EXPECTED:${NC} "$needed_exit" | ${RED}ACTUAL: "$retval""
     fi
   done
-  #cat ./ifj19.py "$1" > testPrg.py
-  #python3 testPrg.py < "$2" > test.out #výsledek pythonu
-
-  #./main < "$1" >final.out
-
-  #echo "interpret -->"
-  #./ic19int final.out <"$2" > result #vstupní souboru asi nějak předat
-
-  #echo "start diffu -->"
-  #diff result test.out
-  #echo "<-- konec diffu"
-
-  #rm test.out result final.out
 
   exit
 fi

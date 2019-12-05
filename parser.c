@@ -400,7 +400,7 @@ int statement_body(Token *token, hSymtab *act_table, int in_function, size_t pos
 }
 
 
-int statement(Token *token, hSymtab *act_table, int in_function){
+int statement(Token *token, hSymtab *act_table, int in_function, size_t pos){
   bool else_ = false;
   bool if_ = false;
   bool while_ = false;
@@ -433,7 +433,7 @@ int statement(Token *token, hSymtab *act_table, int in_function){
       TOKEN_TYPE_NEEDED_CHECK(token->type, TypeVariable) || TOKEN_TYPE_NEEDED_CHECK(token->type, TypeLeftBracket)) {
 
     char uql[MAX_DIGITS_DOUBLE];
-    size_t pos = 0;
+    size_t pos_tmp = 0;
       if (if_)
       {
           char uql[MAX_DIGITS_DOUBLE];
@@ -443,7 +443,7 @@ int statement(Token *token, hSymtab *act_table, int in_function){
       {
         char uql[MAX_DIGITS_DOUBLE];
         generate_unique_label(uql, LABEL_WHILE);
-        generate_while_begin(uql, &pos);
+        generate_while_begin(uql, &pos_tmp);
       }
 
     err = expression(NULL, token, NULL, act_table);
@@ -480,11 +480,16 @@ int statement(Token *token, hSymtab *act_table, int in_function){
 
     if (if_)
     {
-        generate_if_begin(uql, &pos);
+        generate_if_begin(uql, &pos_tmp);
     }
     else if(while_)
     {
         generate_while_loop(uql);
+    }
+
+    if(pos == 0)
+    {
+        pos = pos_tmp;
     }
 
     err = statement_body(token, act_table, in_function, pos);
@@ -824,7 +829,7 @@ int command(Token *token, hSymtab *act_table, int in_function, int statement_swi
       return err;
     }
 
-    err = statement(token, act_table, in_function);
+    err = statement(token, act_table, in_function, pos);
     return err;
   }
   else if (token->type == TypeDocString){

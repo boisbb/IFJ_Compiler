@@ -379,14 +379,14 @@ bool generate_operation_unspecified(Type operation)
 		ADD_CODE("EXIT int@") && ADD_CODE(STR(ERROR_SEMANTIC_RUNTIME)) && ADD_CODE("\n") &&
 		ADD_CODE("LABEL $") && ADD_CODE(label) && ADD_CODE("$ffloat\n") &&
 		ADD_LINE("FLOAT2INT GF@%stmp2 GF@%stmp2") &&
-		ADD_CODE("LABEL $") && ADD_CODE(label) && ADD_CODE("fint\n") &&
+		ADD_CODE("LABEL $") && ADD_CODE(label) && ADD_CODE("$fint\n") &&
 
 		ADD_CODE("JUMPIFEQ $") && ADD_CODE(label) && ADD_CODE("$sint GF@%stmp1%type string@int\n") &&
 		ADD_CODE("JUMPIFEQ $") && ADD_CODE(label) && ADD_CODE("$sfloat GF@%stmp1%type string@float\n") &&
 		ADD_CODE("EXIT int@") && ADD_CODE(STR(ERROR_SEMANTIC_RUNTIME)) && ADD_CODE("\n") &&
 		ADD_CODE("LABEL $") && ADD_CODE(label) && ADD_CODE("$sfloat\n") &&
 		ADD_LINE("FLOAT2INT GF@%stmp1 GF@%stmp1") &&
-		ADD_CODE("LABEL $") && ADD_CODE(label) && ADD_CODE("sint\n");
+		ADD_CODE("LABEL $") && ADD_CODE(label) && ADD_CODE("$sint\n");
 	}
 	else if(operation == TypeOperatorDiv)
 	{
@@ -396,14 +396,14 @@ bool generate_operation_unspecified(Type operation)
 		ADD_CODE("EXIT int@") && ADD_CODE(STR(ERROR_SEMANTIC_RUNTIME)) && ADD_CODE("\n") &&
 		ADD_CODE("LABEL $") && ADD_CODE(label) && ADD_CODE("$fint\n") &&
 		ADD_LINE("INT2FLOAT GF@%stmp2 GF@%stmp2") &&
-		ADD_CODE("LABEL $") && ADD_CODE(label) && ADD_CODE("ffloat\n") &&
+		ADD_CODE("LABEL $") && ADD_CODE(label) && ADD_CODE("$ffloat\n") &&
 
 		ADD_CODE("JUMPIFEQ $") && ADD_CODE(label) && ADD_CODE("$sint GF@%stmp1%type string@int\n") &&
 		ADD_CODE("JUMPIFEQ $") && ADD_CODE(label) && ADD_CODE("$sfloat GF@%stmp1%type string@float\n") &&
 		ADD_CODE("EXIT int@") && ADD_CODE(STR(ERROR_SEMANTIC_RUNTIME)) && ADD_CODE("\n") &&
 		ADD_CODE("LABEL $") && ADD_CODE(label) && ADD_CODE("$sint\n") &&
 		ADD_LINE("INT2FLOAT GF@%stmp1 GF@%stmp1") &&
-		ADD_CODE("LABEL $") && ADD_CODE(label) && ADD_CODE("sfloat\n");
+		ADD_CODE("LABEL $") && ADD_CODE(label) && ADD_CODE("$sfloat\n");
 	}
 	else
 	{

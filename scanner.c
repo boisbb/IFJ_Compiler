@@ -231,7 +231,7 @@ int get_next_token_internal(Token *token)
 				}
 				else
 				{
-					DEBUG_PRINT("%s: 0x%.2X, %i\n", "unknown symbol", c, c);
+					//DEBUG_PRINT("%s: 0x%.2X, %i\n", "unknown symbol", c, c);
 					return ERROR_LEXICAL;
 				}
 				break;
@@ -698,7 +698,7 @@ int get_next_token_internal(Token *token)
 				break;
 		}
 	}
-#if defined(DEBUG) && DEBUG > 0
+/*#if defined(DEBUG) && DEBUG > 0
 	if(c != EOF)
 	{
 		if(token->type == TypeString || token->type == TypeVariable || token->type == TypeKeyword || token->type == TypeDocString)
@@ -710,7 +710,7 @@ int get_next_token_internal(Token *token)
 		else
 			DEBUG_PRINT("Token type: %s \n", type_names[token->type]);
 	}
-#endif
+#endif*/
 
 	//eof in state, where it shouldnt be. isnt finished -> todo
 	if(c == EOF && !break_while && state != STATE_INITIAL)

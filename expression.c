@@ -317,6 +317,8 @@ int id_s_push(TermStackIt *term_item){
   id_stack_cnt += 1;
   Type type;
 
+
+
   if (term_item->type == TypeVariable){
     type = ((hSymtab_Var*)(symtab_it_position((char*)term_item->tok_cont, s_table)->data))->type;
   }
@@ -373,6 +375,7 @@ int ready_to_pop(int fction_switch){
           else {
             if (symtab_it_position((char*)expr_stack.top->tok_cont, s_table)->item_type == IT_VAR){
               id_s_push(expr_stack.top);
+              DEBUG_PRINT("Pushed to id stack: %s %d\n", (char*)expr_stack.top->tok_cont, expr_stack.top->type);
 
               if (fction_switch != 1){
                 // Maybe change //
@@ -421,6 +424,7 @@ int ready_to_pop(int fction_switch){
           generate_push_data(expr_stack.top->type, expr_stack.top->tok_cont);
 
           id_s_push(expr_stack.top);
+          DEBUG_PRINT("Pushed to id stack: %f\n", *(double*)expr_stack.top->tok_cont);
 
           if (fction_switch != 1){
             // Maybe change //
@@ -477,6 +481,7 @@ int ready_to_pop(int fction_switch){
       return ERROR_SYNTAX;
       break;
   }
+
 
 
   s_pop();
@@ -732,6 +737,7 @@ int check_operators_and_operands_syntax(Type operator, int fction_switch){
     generate_operation(operator); //generator
   } // For TypeOperatorFloorDiv TODO
   else if( operator == TypeOperatorFloorDiv && (l_operand.type == TypeInt && r_operand.type == TypeInt)) {
+    result = TypeInt;
 
     // TODO GENERATE CODE FOR TypeOperatorFloorDiv
 
@@ -835,16 +841,22 @@ int check_operators_and_operands_syntax(Type operator, int fction_switch){
   }
   else if(r_operand.type == TypeUnspecified && l_operand.type == TypeUnspecified)
   {
+      result = TypeUnspecified;
       generate_operation_unspecified(operator); //generator
   }
   else {
-    fprintf(stderr,"R: %s OP: %s R: %s\n", operNames_[r_operand.type], operNames_[operator],operNames_[r_operand.type]);
+    fprintf(stderr,"R: %s OP: %s L: %d\n", (char*)r_operand.content, operNames_[operator], l_operand.type);
     DEBUG_PRINT("SYNTAX ERROR: Incorrect operator or operand.\n");
     return ERROR_SEMANTIC_RUNTIME;
   }
 
+
+  DEBUG_PRINT("POP from id stack: %s %d\n", (char*)id_stack.top->left->content, id_stack.top->left->type);
   id_s_pop();
+  DEBUG_PRINT("id_stack_top: %s %d\n", (char*)id_stack.top->content, id_stack.top->type);
   id_stack.top->type = result;
+
+  DEBUG_PRINT("id_stack_top: %s %d\n", (char*)id_stack.top->content, id_stack.top->type);
 
   return NO_ERROR;
 

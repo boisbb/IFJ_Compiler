@@ -291,7 +291,7 @@ bool generate_operation(Type type)
 			ret = generate_unique_label(uql, LABEL_CONTROL) &&
 			ADD_LINE("POPS GF@%stmp1") &&
 			ADD_CODE("JUMPIFNEQ $") && ADD_CODE(uql) && ADD_CODE("$zero GF@%stmp1 float@0x0p+0\n") &&
-			ADD_CODE("EXIT int@") && ADD_CODE(STR(ERROR_DIV_BY_NULL)) && ADD_CODE("\n") &&
+			ADD_CODE("EXIT int@") && ADD_CODE(STR(ERROR_DIV_BY_ZERO)) && ADD_CODE("\n") &&
 			ADD_CODE("LABEL $") && ADD_CODE(uql) && ADD_CODE("$zero\n") &&
 			ADD_LINE("PUSHS GF@%stmp1") &&
 			ADD_LINE("DIVS");
@@ -300,7 +300,7 @@ bool generate_operation(Type type)
 			ret = generate_unique_label(uql, LABEL_CONTROL) &&
 			ADD_LINE("POPS GF@%stmp1") &&
 			ADD_CODE("JUMPIFNEQ $") && ADD_CODE(uql) && ADD_CODE("$zero GF@%stmp1 int@0\n") &&
-			ADD_CODE("EXIT int@") && ADD_CODE(STR(ERROR_DIV_BY_NULL)) && ADD_CODE("\n") &&
+			ADD_CODE("EXIT int@") && ADD_CODE(STR(ERROR_DIV_BY_ZERO)) && ADD_CODE("\n") &&
 			ADD_CODE("LABEL $") && ADD_CODE(uql) && ADD_CODE("$zero\n") &&
 			ADD_LINE("PUSHS GF@%stmp1") &&
 			ADD_LINE("IDIVS");

@@ -172,15 +172,16 @@ int fction_call(Token *token, hSymtab *act_table, int in_function){
       return ERROR_INTERNAL;
     }
 
-    if (GET_TOKEN_CHECK_EOF(token) && TOKEN_TYPE_NEEDED_CHECK(token->type, TypeRightBracket)) {
-      if (((hSymtab_Func*)tmp_item_func->data)->paramNum == 0) {
+
+
+    if (!GET_TOKEN_CHECK_EOF(token)) {
+      if (TOKEN_TYPE_NEEDED_CHECK(token->type, TypeRightBracket)){
+        fct_predef_stack.top->param_num = param_cntr;
         return NO_ERROR;
       }
-
-      //generete if there are no params
-      return ERROR_SEMANTIC_FUNCTION_CALL;
     }
     prev = TypeComma;
+
 
     while (token->type != TypeRightBracket) {
 
@@ -205,11 +206,10 @@ int fction_call(Token *token, hSymtab *act_table, int in_function){
       }
     }
 
+    fprintf(stderr, "%s\n", operNamesP[token->type]);
+
     fct_predef_stack.top->param_num = param_cntr;
 
-    if (GET_TOKEN_CHECK_EOF(token)){
-      return ERROR_SYNTAX;
-    }
 
     return NO_ERROR;
 
@@ -458,16 +458,17 @@ int statement(Token *token, hSymtab *act_table, int in_function){
       return ERROR_SYNTAX;
     }
 
+
     if (GET_TOKEN_CHECK_EOF(token)) {
       DEBUG_PRINT("Reached EOF where it should not be. \n");
       return ERROR_SYNTAX;
     }
 
+
     if (!TOKEN_TYPE_NEEDED_CHECK(token->type, TypeNewLine)) {
       DEBUG_PRINT("Syntax error: Newline is missing\n");
       return ERROR_SYNTAX;
     }
-
 
     if (GET_TOKEN_CHECK_EOF(token) || !TOKEN_TYPE_NEEDED_CHECK(token->type, TypeIndent)) {
       DEBUG_PRINT("Reached EOF where it should not be or indent missing. \n");
@@ -660,7 +661,6 @@ int assignment(Token *var, Token *value, hSymtab *act_table, int in_function, si
     }
 
     if (value->type == TypeVariable) {
-      /* ERROR SEG FAULT */
 
       if (symtab_it_position((char*)value->data, act_table)) {
         if (symtab_it_position((char*)value->data, act_table)->item_type == IT_FUNC) {
@@ -811,6 +811,18 @@ int command(Token *token, hSymtab *act_table, int in_function, int statement_swi
 
   } // Pridat None a Pass
   else if (TOKEN_TYPE_NEEDED_CHECK(token->type, TypeKeyword)) {
+
+    if (!strcmp((char*)token->data, "return") && in_function) {
+
+      if (GET_TOKEN_CHECK_EOF(token)) {
+        return NO_ERROR;
+      }
+
+      err = expression(NULL, token, NULL, act_table);
+      generate_pop_return();
+
+      return err;
+    }
 
     err = statement(token, act_table, in_function);
     return err;

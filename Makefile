@@ -8,3 +8,6 @@ $(TARGET1): $(OBJ1)
 
 clean:
 	rm $(OBJ1) $(TARGET1)
+test:
+	./test.sh 'compilable_tests/*py'
+	./test.sh -e 'error_tests/*py'

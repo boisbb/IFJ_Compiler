@@ -2,6 +2,12 @@
 
 x=0
 
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+BLUE='\033[0;34m'
+YELLOW='\033[1;33m'
+NC='\033[0m'
+
 if [ "$1" == "-h" ]; then
   x=1
   echo
@@ -13,40 +19,66 @@ if [ "$1" == "-h" ]; then
 fi
 
 if [ "$#" == 2 ]; then
-  cat ./ifj19.py "$1" > testPrg.py
-  python3 testPrg.py < "$2" > test.out #výsledek pythonu
+  if [ "$1" != "-e" ]; then
+    echo "${RED}INCORRECT PARAMETER FORMAT!${NC}"
+  fi
 
-  ./main < "$1" >final.out
+  printf "${YELLOW}EXIT CODES COMPARISON:${NC} \n"
+  for file in $2
+  do
+    ./main < "$file"
+    retval=$?
+    file_to_check=${file::-2}
+    file_to_check="${file_to_check}txt"
+    needed_exit="$(cat "$file_to_check")"
+    if [[ "$needed_exit" == "$retval" ]]; then
+      echo -e "$(realpath "$file") ${GREEN}PASSED${NC}"
+    else
+      echo -e "$(realpath "$file") ${RED}FAILED${NC}"
+    fi
+  done
+  #cat ./ifj19.py "$1" > testPrg.py
+  #python3 testPrg.py < "$2" > test.out #výsledek pythonu
 
-  echo "interpret -->"
-  ./ic19int final.out <"$2" > result #vstupní souboru asi nějak předat
+  #./main < "$1" >final.out
 
-  echo "start diffu -->"
-  diff result test.out
-  echo "<-- konec diffu"
+  #echo "interpret -->"
+  #./ic19int final.out <"$2" > result #vstupní souboru asi nějak předat
 
-  rm test.out result final.out
+  #echo "start diffu -->"
+  #diff result test.out
+  #echo "<-- konec diffu"
+
+  #rm test.out result final.out
 
   exit
 fi
 
 if [ "$#" == 1 ]; then
-  cat ./ifj19.py "$1" > testPrg.py
-  python3 testPrg.py > test.out #výsledek pythonu
+  printf "${BLUE}DIFF RESULTS:${NC} \n"
+  for file in $1
+  do
+    cat ./ifj19.py "$file" > testPrg.py
+    python3 testPrg.py > test.out #výsledek pythonu
 
-  ./main < "$1" >final.out
-  echo "interpret -->"
+    ./main < "$file" >final.out
+    #echo "interpret -->"
 
-  ./ic19int final.out > result
+    ./ic19int final.out > result
 
 
-  echo "start diffu -->"
-  diff result test.out
-  echo "<-- konec diffu"
+    DIFF=$(diff result test.out)
+    if [ "$DIFF" == "" ]
+    then
+      echo -e "$(realpath "$file") ${GREEN}PASSED${NC}"
+    else
+      echo -e "$(realpath "$file") ${RED}FAILED${NC}"
+    fi
 
-  rm  test.out result final.out
+    rm  test.out result final.out
+  done
 
-  exit
+    exit
 fi
 
 

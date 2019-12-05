@@ -114,6 +114,9 @@ static inline bool generate_var_value(Type type, void* data)
 				else
 					ret = false;
 				break;
+			case TypeKeywordNone:
+				ret = ADD_CODE("nil@nil");
+				break;
 			default:
 				ret = false;
 				break;
@@ -163,6 +166,7 @@ char *generator_code_get()
 
 void generator_code_clear()
 {
+	str_clear(&fnc);
 	str_clear(&code);
 }
 
@@ -405,6 +409,31 @@ bool generate_operation_unspecified(Type operation)
 		ADD_LINE("INT2FLOAT GF@%stmp1 GF@%stmp1") &&
 		ADD_CODE("LABEL $") && ADD_CODE(label) && ADD_CODE("$sfloat\n");
 	}
+	else if(operation == TypeEquality || operation == TypeUnEquality)
+	{
+		ret &=
+		ADD_CODE("JUMPIFEQ $") && ADD_CODE(label) && ADD_CODE("$same") && ADD_CODE(" GF@%stmp1%type GF@%stmp2%type\n") &&
+		ADD_CODE("JUMPIFEQ $") && ADD_CODE(label) && ADD_CODE("$fint") && ADD_CODE(" GF@%stmp2%type string@int\n") &&
+		ADD_CODE("JUMPIFEQ $") && ADD_CODE(label) && ADD_CODE("$ffloat") && ADD_CODE(" GF@%stmp2%type string@float\n") &&
+		ADD_CODE("EXIT int@") && ADD_CODE(STR(ERROR_SEMANTIC_RUNTIME)) && ADD_CODE("\n") &&
+
+		ADD_CODE("LABEL $") && ADD_CODE(label) && ADD_CODE("$fint\n") &&
+		ADD_CODE("JUMPIFEQ $") && ADD_CODE(label) && ADD_CODE("$fint_sfloat") && ADD_CODE(" GF@%stmp1%type string@float\n") &&
+		ADD_CODE("EXIT int@") && ADD_CODE(STR(ERROR_SEMANTIC_RUNTIME)) && ADD_CODE("\n") &&
+
+		ADD_CODE("LABEL $") && ADD_CODE(label) && ADD_CODE("$fint_sfloat\n") &&
+		ADD_LINE("FLOAT2INT GF@%stmp1 GF@%stmp1") &&
+		ADD_CODE("JUMP $") && ADD_CODE(label) && ADD_CODE("$same\n") &&
+
+		ADD_CODE("LABEL $") && ADD_CODE(label) && ADD_CODE("$ffloat\n") &&
+		ADD_CODE("JUMPIFEQ $") && ADD_CODE(label) && ADD_CODE("$ffloat_sint") && ADD_CODE(" GF@%stmp1%type string@int\n") &&
+		ADD_CODE("EXIT int@") && ADD_CODE(STR(ERROR_SEMANTIC_RUNTIME)) && ADD_CODE("\n") &&
+
+		ADD_CODE("LABEL $") && ADD_CODE(label) && ADD_CODE("$ffloat_sint\n") &&
+		ADD_LINE("INT2FLOAT GF@%stmp1 GF@%stmp1") &&
+
+		ADD_CODE("LABEL $") && ADD_CODE(label) && ADD_CODE("$same\n");
+	}
 	else
 	{
 		ret &=
@@ -429,6 +458,10 @@ bool generate_operation_unspecified(Type operation)
 		ADD_LINE("INT2FLOAT GF@%stmp1 GF@%stmp1") &&
 
 		ADD_CODE("LABEL $") && ADD_CODE(label) && ADD_CODE("$same\n");
+
+		ADD_CODE("JUMPIFNEQ $") && ADD_CODE(label) && ADD_CODE("$nonil") && ADD_CODE(" GF@%stmp1%type string@nil\n") &&
+		ADD_CODE("EXIT int@") && ADD_CODE(STR(ERROR_SEMANTIC_RUNTIME)) && ADD_CODE("\n") &&
+		ADD_CODE("LABEL $") && ADD_CODE(label) && ADD_CODE("$nonil\n");
 	}
 
 	ret &=
@@ -508,7 +541,8 @@ bool generate_if_begin(char* label, size_t* pos)
 		ADD_CODE("JUMPIFEQ $") && ADD_CODE(label) && ADD_CODE("%int GF@%exp_result%type string@int\n") &&
 		ADD_CODE("JUMPIFEQ $") && ADD_CODE(label) && ADD_CODE("%float GF@%exp_result%type string@float\n") &&
 		ADD_CODE("JUMPIFEQ $") && ADD_CODE(label) && ADD_CODE("%string GF@%exp_result%type string@string\n") &&
-		ADD_CODE("EXIT int@") && ADD_CODE(STR(ERROR_SEMANTIC_RUNTIME)) && ADD_CODE("\n") &&//nil
+		//ADD_CODE("EXIT int@") && ADD_CODE(STR(ERROR_SEMANTIC_RUNTIME)) && ADD_CODE("\n") &&//nil
+		ADD_CODE("JUMP $") && ADD_CODE(label) && ADD_CODE("%ifend\n") &&//nil - false
 
 		ADD_CODE("LABEL $") && ADD_CODE(label) && ADD_CODE("%string\n") &&
 		ADD_LINE("STRLEN GF@%exp_result GF@%exp_result") &&
@@ -557,7 +591,8 @@ bool generate_while_loop(char* label)
 		ADD_CODE("JUMPIFEQ $") && ADD_CODE(label) && ADD_CODE("%int GF@%exp_result%type string@int\n") &&
 		ADD_CODE("JUMPIFEQ $") && ADD_CODE(label) && ADD_CODE("%float GF@%exp_result%type string@float\n") &&
 		ADD_CODE("JUMPIFEQ $") && ADD_CODE(label) && ADD_CODE("%string GF@%exp_result%type string@string\n") &&
-		ADD_CODE("EXIT int@") && ADD_CODE(STR(ERROR_SEMANTIC_RUNTIME)) && ADD_CODE("\n") &&//nil
+		//ADD_CODE("EXIT int@") && ADD_CODE(STR(ERROR_SEMANTIC_RUNTIME)) && ADD_CODE("\n") &&//nil
+		ADD_CODE("JUMP $") && ADD_CODE(label) && ADD_CODE("%end\n") &&//nil - false
 
 		ADD_CODE("LABEL $") && ADD_CODE(label) && ADD_CODE("%string\n") &&
 		ADD_LINE("STRLEN GF@%exp_result GF@%exp_result") &&

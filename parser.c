@@ -1,6 +1,7 @@
 #include "parser.h"
 #include "generator.h"
 #define BRACKET_RETURN 800
+#define NO_ERROR_STAT 900
 
 
 #define GET_TOKEN_CHECK_EOF(token) \
@@ -391,8 +392,8 @@ int statement_body(Token *token, hSymtab *act_table, int in_function, char* fcti
       return err;
     }
 
-    if (token->type == TypeDedend){
 
+    if (token->type == TypeDedend){
       if (GET_TOKEN_CHECK_EOF(token)) {
         //DEBUG_PRINT("Reached EOF successfully\n");
         return NO_ERROR;
@@ -404,7 +405,6 @@ int statement_body(Token *token, hSymtab *act_table, int in_function, char* fcti
 
       continue;
     }
-
 
 
     if (GET_TOKEN_CHECK_EOF(token)) {
@@ -516,8 +516,8 @@ int statement(Token *token, hSymtab *act_table, int in_function, char* fction_na
     if(err)
         return err;
 
-
-    if (strcmp((char*)token->data, "else")){
+    //fprintf(stderr, "%s %s\n", operNamesP[token->type], (char*)token->data);
+    if (strcmp((char*)token->data, "else") || token->type == TypeDedend){
       if(GET_TOKEN_CHECK_EOF(token)){
         return NO_ERROR;
       }
@@ -536,6 +536,8 @@ int statement(Token *token, hSymtab *act_table, int in_function, char* fction_na
         if(GET_TOKEN_CHECK_EOF(token)){
           return NO_ERROR;
         }
+
+        ////fprintf(stderr, "%s\n", operNamesP[token->type]);
 
         if (token->type != TypeColon) {
           return ERROR_SYNTAX;

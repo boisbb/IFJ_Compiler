@@ -25,10 +25,10 @@ typedef enum
 	//TypeTab, //useless
 	TypeNewLine,
 	TypeKeyword,
-	TypeVariable,
-	TypeString,
-	TypeDocString,
-	TypeInt,
+	TypeVariable, // 19
+	TypeString, // 20
+	TypeDocString, // 21
+	TypeInt, // 22
 	TypeFloat,
 	TypeIndent,
 	TypeDedend,

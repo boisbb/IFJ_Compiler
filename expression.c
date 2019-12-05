@@ -110,6 +110,17 @@ int expression(Token *pre_token, Token *act_token, hSymtab_it *p_variable, hSymt
   //fprintf(stderr, "%s\n", (char*)act_tok.data); SEG FAULT
   error = expression_eval(0, pre_token != NULL);
 
+  if (error) {
+    return error;
+  }
+
+  //// PLYNE Z OPRAVY, ZAKOMENTOVANA CAST V ready_to_pop VICKRAT OKONTROLOVAT TODO
+  if (variable) {
+    if (variable->item_type == IT_VAR){
+      ((hSymtab_Var*)variable->data)->type = id_stack.top->type;
+    }
+  }
+
   free(expr_stack.top);
   free(id_stack.top);
   id_stack.top = NULL;
@@ -321,6 +332,7 @@ int id_s_push(TermStackIt *term_item){
 
   if (term_item->type == TypeVariable){
     type = ((hSymtab_Var*)(symtab_it_position((char*)term_item->tok_cont, s_table)->data))->type;
+    DEBUG_PRINT("TYPE IN id_s_push: %s\n", operNames_[type]);
   }
   else {
     type = term_item->type;
@@ -375,10 +387,11 @@ int ready_to_pop(int fction_switch){
           else {
             if (symtab_it_position((char*)expr_stack.top->tok_cont, s_table)->item_type == IT_VAR){
               id_s_push(expr_stack.top);
-              DEBUG_PRINT("Pushed to id stack: %s %d\n", (char*)expr_stack.top->tok_cont, expr_stack.top->type);
+              DEBUG_PRINT("Pushed to id stack: %s %d\n", (char*)id_stack.top->content, id_stack.top->type);
 
               if (fction_switch != 1){
                 // Maybe change //
+                /*
                 if (variable) {
                   if (variable->item_type == IT_VAR){
                     ((hSymtab_Var*)variable->data)->type = id_stack.top->type;
@@ -386,7 +399,7 @@ int ready_to_pop(int fction_switch){
                   else if (variable->item_type == IT_FUNC){
                     ((hSymtab_Func*)variable->data)->return_type = id_stack.top->type;
                   }
-                }
+                }*/
               }
               else {
                 param_type = id_stack.top->type;
@@ -424,9 +437,9 @@ int ready_to_pop(int fction_switch){
           generate_push_data(expr_stack.top->type, expr_stack.top->tok_cont);
 
           id_s_push(expr_stack.top);
-          DEBUG_PRINT("Pushed to id stack: %f\n", *(double*)expr_stack.top->tok_cont);
+          //DEBUG_PRINT("Pushed to id stack: %f\n", *(double*)expr_stack.top->tok_cont);
 
-          if (fction_switch != 1){
+          if (fction_switch != 1){/*
             // Maybe change //
             if (variable) {
               if (variable->item_type == IT_VAR){
@@ -435,7 +448,7 @@ int ready_to_pop(int fction_switch){
               else if (variable->item_type == IT_FUNC){
                 ((hSymtab_Func*)variable->data)->return_type = id_stack.top->type;
               }
-            }
+            }*/
           }
           else {
             param_type = id_stack.top->type;
@@ -628,6 +641,8 @@ int check_operators_and_operands_syntax(Type operator, int fction_switch){
   IdStackIt r_operand = *id_stack.top;
   Type result;
 
+  DEBUG_PRINT("L: %s O: %s R: %s", operNames_[l_operand.type], operNames_[operator], operNames_[r_operand.type]);
+
   if (r_operand.type == TypeKeywordNone) {
     fprintf(stderr, "got here\n");
   }
@@ -760,7 +775,7 @@ int check_operators_and_operands_syntax(Type operator, int fction_switch){
     else {
       param_type = TypeFloat;
     }
-  } // When both operands are either Float or INT or any combination, there is no need to check syntax
+  }
   else if (((l_operand.type == TypeFloat && r_operand.type == TypeInt) || (l_operand.type == TypeInt && r_operand.type == TypeFloat) ||
             (l_operand.type == TypeFloat && r_operand.type == TypeFloat)) && operator != TypeOperatorFloorDiv){
 
@@ -850,18 +865,13 @@ int check_operators_and_operands_syntax(Type operator, int fction_switch){
       generate_operation_unspecified(operator); //generator
   }
   else {
-    fprintf(stderr,"R: %s OP: %s L: %d\n", (char*)r_operand.content, operNames_[operator], l_operand.type);
     DEBUG_PRINT("SYNTAX ERROR: Incorrect operator or operand.\n");
     return ERROR_SEMANTIC_RUNTIME;
   }
 
-
-  DEBUG_PRINT("POP from id stack: %s %d\n", (char*)id_stack.top->left->content, id_stack.top->left->type);
   id_s_pop();
-  DEBUG_PRINT("id_stack_top: %s %d\n", (char*)id_stack.top->content, id_stack.top->type);
   id_stack.top->type = result;
 
-  DEBUG_PRINT("id_stack_top: %s %d\n", (char*)id_stack.top->content, id_stack.top->type);
 
   return NO_ERROR;
 

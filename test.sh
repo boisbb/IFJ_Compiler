@@ -62,7 +62,7 @@ if [ "$#" == 1 ]; then
       echo -e "$(realpath "$file") ${RED}FAILED${NC}"
     fi
 
-    rm  test.out result final.out
+    rm  test.out result final.out testPrg.py
   done
 
     exit

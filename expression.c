@@ -209,19 +209,6 @@ int expression_eval(int fction_switch, int pre_token_switch){
       // Pushing on stack
       case '<':
         ////DEBUG_PRINT("Pushing: %s\n", operNames_[act_tok.type]);
-
-        /* SOUCAST ROZSIRENI, ZATIM SE NEPOUZIVA
-        if (act_tok.type == TypeVariable) {
-          hSymtab_it *tmp_sym_it = symtab_it_position((char*)act_tok.data, s_table);
-          if (tmp_sym_it) {
-            if (tmp_sym_it->item_type == IT_FUNC) {
-              error = realize_function_call((hSymtab_Func*)tmp_sym_it->data);
-              if (error != NO_ERROR) {
-                return error;
-              }
-            }
-          }
-        }*/
         if (act_tok.type == TypeVariable) {
           if (!symtab_it_position((char*)act_tok.data, s_table)) {
 
@@ -390,16 +377,6 @@ int ready_to_pop(int fction_switch){
               ////DEBUG_PRINT("Pushed to id stack: %s %d\n", (char*)id_stack.top->content, id_stack.top->type);
 
               if (fction_switch != 1){
-                // Maybe change //
-                /*
-                if (variable) {
-                  if (variable->item_type == IT_VAR){
-                    ((hSymtab_Var*)variable->data)->type = id_stack.top->type;
-                  }
-                  else if (variable->item_type == IT_FUNC){
-                    ((hSymtab_Func*)variable->data)->return_type = id_stack.top->type;
-                  }
-                }*/
               }
               else {
                 param_type = id_stack.top->type;
@@ -420,29 +397,12 @@ int ready_to_pop(int fction_switch){
         case TypeString:
         case TypeKeywordNone:
 
-          /*// GENERATE INSTRUCTION //
-          if (expr_stack.top->type == TypeInt)
-            ////fprintf(stderr,"\t \tSENT TO GENERATOR: %d\n", *(int*)expr_stack.top->tok_cont);
-          else if (expr_stack.top->type == TypeFloat)
-            ////fprintf(stderr,"\t \tSENT TO GENERATOR: %f\n", *(double*)expr_stack.top->tok_cont);
-          else
-            ////fprintf(stderr,"\t \tSENT TO GENERATOR: %s\n", (char*)expr_stack.top->tok_cont);
-          ///*/
           generate_push_data(expr_stack.top->type, expr_stack.top->tok_cont);
 
           id_s_push(expr_stack.top);
           //////DEBUG_PRINT("Pushed to id stack: %f\n", *(double*)expr_stack.top->tok_cont);
 
-          if (fction_switch != 1){/*
-            // Maybe change //
-            if (variable) {
-              if (variable->item_type == IT_VAR){
-                ((hSymtab_Var*)variable->data)->type = id_stack.top->type;
-              }
-              else if (variable->item_type == IT_FUNC){
-                ((hSymtab_Func*)variable->data)->return_type = id_stack.top->type;
-              }
-            }*/
+          if (fction_switch != 1){
           }
           else {
             param_type = id_stack.top->type;
@@ -495,103 +455,6 @@ int ready_to_pop(int fction_switch){
   return NO_ERROR;
 
 }
-
-// ZATIM SE NEPOUZIVA //
-/*
-int realize_function_call(hSymtab_Func* func_data){
-  int param_cnt = symtab_num_of_fction_params(func_data);
-  hSymtab_Func_Param *act_parameters = func_data->params;
-  if (variable != NULL) {
-    if (func_data->return_type == TypeUndefined) {
-      ////DEBUG_PRINT("Syntax error: function has no return value.\n");
-      return ERROR_SYNTAX;
-    }
-  }
-  if (((hSymtab_Var*)variable->data)->type == TypeUnspecified) {
-    ((hSymtab_Var*)variable->data)->type = func_data->return_type;
-  }
-  // Push fction name
-  s_push();
-  ////fprintf(stderr,"\t \tSENT TO GENERATOR: %s\n", (char*)expr_stack.top->tok_cont);
-  if(get_next_token(&act_tok) == EOF) {
-    ////DEBUG_PRINT("Parsing ended: found EOF.\n");
-    return EOF;
-  }
-  if (act_tok.type != TypeLeftBracket) {
-    ////DEBUG_PRINT("SYNTAX ERROR: Expected Left Parentheses.\n");
-    return ERROR_SYNTAX;
-  }
-  s_push();
-  if (!act_parameters && param_cnt == 0) {
-    if(get_next_token(&act_tok) == EOF) {
-      ////DEBUG_PRINT("Found EOF.\n");
-      return EOF;
-    }
-    if (act_tok.type != TypeRightBracket) {
-      ////DEBUG_PRINT("Syntax error: incorrect parameters.\n");
-      return ERROR_SYNTAX;
-    }
-    else{
-      return NO_ERROR;
-    }
-  }
-  while(1) {
-    if(get_next_token(&act_tok) == EOF) {
-      ////DEBUG_PRINT("Found EOF.\n");
-      return EOF;
-    }
-    if (convert_token_type_to_prec_type(&act_tok) != IDENTIFIER && act_tok.type != TypeRightBracket) {
-      ////DEBUG_PRINT("SYNTAX ERROR: Expected function parameter or right Parentheses.\n");
-      return ERROR_SYNTAX;
-    }
-    else if (convert_token_type_to_prec_type(&act_tok) == IDENTIFIER && param_cnt != 0){
-      expression_eval(REALIZE_FUNC, 0);
-      param_cnt--;
-      if (act_parameters->param_type != TypeUnspecified && param_type != TypeUnspecified) {
-        if (act_parameters->param_type != param_type) {
-          ////DEBUG_PRINT("Syntax error: Incorrect parameter type.\n");
-          return ERROR_SYNTAX;
-        }
-      }
-      if (act_tok.type == TypeRightBracket) {
-        if (param_cnt == 0) {
-          // GENEROVANI KODU MOZNA AZ TADY
-          s_pop();
-          expr_stack.top->type = func_data->return_type;
-          id_s_push(expr_stack.top);
-          s_pop();
-          return NO_ERROR;
-        }
-        else{
-          ////DEBUG_PRINT("Semantioc error: Incorrect number of parameters.\n");
-          return ERROR_SEMANTIC;
-        }
-      }
-      if (act_tok.type == TypeComma) {
-        if (param_cnt == 0) {
-          ////DEBUG_PRINT("Syntax error: Too many parameters\n");
-          return ERROR_SYNTAX;
-        }
-      }
-      act_parameters = act_parameters->next;
-    }
-    else if (convert_token_type_to_prec_type(&act_tok) == IDENTIFIER && param_cnt == 0){
-      ////DEBUG_PRINT("SYNTAX ERROR: Function recieved too many parameters.\n");
-      return ERROR_SEMANTIC;
-    }
-    else if (act_tok.type == TypeRightBracket && param_cnt != 0) {
-      ////DEBUG_PRINT("SYNTAX ERROR: Function did not recieve needed parameters.\n");
-      return ERROR_SEMANTIC;
-    }
-    else if(act_tok.type == TypeRightBracket && param_cnt == 0){
-      break;
-    }
-    else {
-      ////DEBUG_PRINT("SYNTAX ERROR: Function did not recieve comma, parentheses or parameter.\n");
-      return ERROR_SEMANTIC;
-    }
-  }
-}*/
 
 
 int check_operators_and_operands_syntax(Type operator, int fction_switch){

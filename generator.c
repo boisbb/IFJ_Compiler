@@ -114,6 +114,9 @@ static inline bool generate_var_value(Type type, void* data)
 				else
 					ret = false;
 				break;
+			case TypeKeywordNone:
+				ret = ADD_CODE("nil@nil");
+				break;
 			default:
 				ret = false;
 				break;
@@ -163,6 +166,7 @@ char *generator_code_get()
 
 void generator_code_clear()
 {
+	str_clear(&fnc);
 	str_clear(&code);
 }
 
@@ -291,7 +295,7 @@ bool generate_operation(Type type)
 			ret = generate_unique_label(uql, LABEL_CONTROL) &&
 			ADD_LINE("POPS GF@%stmp1") &&
 			ADD_CODE("JUMPIFNEQ $") && ADD_CODE(uql) && ADD_CODE("$zero GF@%stmp1 float@0x0p+0\n") &&
-			ADD_CODE("EXIT int@") && ADD_CODE(STR(ERROR_DIV_BY_NULL)) && ADD_CODE("\n") &&
+			ADD_CODE("EXIT int@") && ADD_CODE(STR(ERROR_DIV_BY_ZERO)) && ADD_CODE("\n") &&
 			ADD_CODE("LABEL $") && ADD_CODE(uql) && ADD_CODE("$zero\n") &&
 			ADD_LINE("PUSHS GF@%stmp1") &&
 			ADD_LINE("DIVS");
@@ -300,7 +304,7 @@ bool generate_operation(Type type)
 			ret = generate_unique_label(uql, LABEL_CONTROL) &&
 			ADD_LINE("POPS GF@%stmp1") &&
 			ADD_CODE("JUMPIFNEQ $") && ADD_CODE(uql) && ADD_CODE("$zero GF@%stmp1 int@0\n") &&
-			ADD_CODE("EXIT int@") && ADD_CODE(STR(ERROR_DIV_BY_NULL)) && ADD_CODE("\n") &&
+			ADD_CODE("EXIT int@") && ADD_CODE(STR(ERROR_DIV_BY_ZERO)) && ADD_CODE("\n") &&
 			ADD_CODE("LABEL $") && ADD_CODE(uql) && ADD_CODE("$zero\n") &&
 			ADD_LINE("PUSHS GF@%stmp1") &&
 			ADD_LINE("IDIVS");
@@ -379,14 +383,14 @@ bool generate_operation_unspecified(Type operation)
 		ADD_CODE("EXIT int@") && ADD_CODE(STR(ERROR_SEMANTIC_RUNTIME)) && ADD_CODE("\n") &&
 		ADD_CODE("LABEL $") && ADD_CODE(label) && ADD_CODE("$ffloat\n") &&
 		ADD_LINE("FLOAT2INT GF@%stmp2 GF@%stmp2") &&
-		ADD_CODE("LABEL $") && ADD_CODE(label) && ADD_CODE("fint\n") &&
+		ADD_CODE("LABEL $") && ADD_CODE(label) && ADD_CODE("$fint\n") &&
 
 		ADD_CODE("JUMPIFEQ $") && ADD_CODE(label) && ADD_CODE("$sint GF@%stmp1%type string@int\n") &&
 		ADD_CODE("JUMPIFEQ $") && ADD_CODE(label) && ADD_CODE("$sfloat GF@%stmp1%type string@float\n") &&
 		ADD_CODE("EXIT int@") && ADD_CODE(STR(ERROR_SEMANTIC_RUNTIME)) && ADD_CODE("\n") &&
 		ADD_CODE("LABEL $") && ADD_CODE(label) && ADD_CODE("$sfloat\n") &&
 		ADD_LINE("FLOAT2INT GF@%stmp1 GF@%stmp1") &&
-		ADD_CODE("LABEL $") && ADD_CODE(label) && ADD_CODE("sint\n");
+		ADD_CODE("LABEL $") && ADD_CODE(label) && ADD_CODE("$sint\n");
 	}
 	else if(operation == TypeOperatorDiv)
 	{
@@ -396,14 +400,39 @@ bool generate_operation_unspecified(Type operation)
 		ADD_CODE("EXIT int@") && ADD_CODE(STR(ERROR_SEMANTIC_RUNTIME)) && ADD_CODE("\n") &&
 		ADD_CODE("LABEL $") && ADD_CODE(label) && ADD_CODE("$fint\n") &&
 		ADD_LINE("INT2FLOAT GF@%stmp2 GF@%stmp2") &&
-		ADD_CODE("LABEL $") && ADD_CODE(label) && ADD_CODE("ffloat\n") &&
+		ADD_CODE("LABEL $") && ADD_CODE(label) && ADD_CODE("$ffloat\n") &&
 
 		ADD_CODE("JUMPIFEQ $") && ADD_CODE(label) && ADD_CODE("$sint GF@%stmp1%type string@int\n") &&
 		ADD_CODE("JUMPIFEQ $") && ADD_CODE(label) && ADD_CODE("$sfloat GF@%stmp1%type string@float\n") &&
 		ADD_CODE("EXIT int@") && ADD_CODE(STR(ERROR_SEMANTIC_RUNTIME)) && ADD_CODE("\n") &&
 		ADD_CODE("LABEL $") && ADD_CODE(label) && ADD_CODE("$sint\n") &&
 		ADD_LINE("INT2FLOAT GF@%stmp1 GF@%stmp1") &&
-		ADD_CODE("LABEL $") && ADD_CODE(label) && ADD_CODE("sfloat\n");
+		ADD_CODE("LABEL $") && ADD_CODE(label) && ADD_CODE("$sfloat\n");
+	}
+	else if(operation == TypeEquality || operation == TypeUnEquality)
+	{
+		ret &=
+		ADD_CODE("JUMPIFEQ $") && ADD_CODE(label) && ADD_CODE("$same") && ADD_CODE(" GF@%stmp1%type GF@%stmp2%type\n") &&
+		ADD_CODE("JUMPIFEQ $") && ADD_CODE(label) && ADD_CODE("$fint") && ADD_CODE(" GF@%stmp2%type string@int\n") &&
+		ADD_CODE("JUMPIFEQ $") && ADD_CODE(label) && ADD_CODE("$ffloat") && ADD_CODE(" GF@%stmp2%type string@float\n") &&
+		ADD_CODE("EXIT int@") && ADD_CODE(STR(ERROR_SEMANTIC_RUNTIME)) && ADD_CODE("\n") &&
+
+		ADD_CODE("LABEL $") && ADD_CODE(label) && ADD_CODE("$fint\n") &&
+		ADD_CODE("JUMPIFEQ $") && ADD_CODE(label) && ADD_CODE("$fint_sfloat") && ADD_CODE(" GF@%stmp1%type string@float\n") &&
+		ADD_CODE("EXIT int@") && ADD_CODE(STR(ERROR_SEMANTIC_RUNTIME)) && ADD_CODE("\n") &&
+
+		ADD_CODE("LABEL $") && ADD_CODE(label) && ADD_CODE("$fint_sfloat\n") &&
+		ADD_LINE("FLOAT2INT GF@%stmp1 GF@%stmp1") &&
+		ADD_CODE("JUMP $") && ADD_CODE(label) && ADD_CODE("$same\n") &&
+
+		ADD_CODE("LABEL $") && ADD_CODE(label) && ADD_CODE("$ffloat\n") &&
+		ADD_CODE("JUMPIFEQ $") && ADD_CODE(label) && ADD_CODE("$ffloat_sint") && ADD_CODE(" GF@%stmp1%type string@int\n") &&
+		ADD_CODE("EXIT int@") && ADD_CODE(STR(ERROR_SEMANTIC_RUNTIME)) && ADD_CODE("\n") &&
+
+		ADD_CODE("LABEL $") && ADD_CODE(label) && ADD_CODE("$ffloat_sint\n") &&
+		ADD_LINE("INT2FLOAT GF@%stmp1 GF@%stmp1") &&
+
+		ADD_CODE("LABEL $") && ADD_CODE(label) && ADD_CODE("$same\n");
 	}
 	else
 	{
@@ -429,6 +458,10 @@ bool generate_operation_unspecified(Type operation)
 		ADD_LINE("INT2FLOAT GF@%stmp1 GF@%stmp1") &&
 
 		ADD_CODE("LABEL $") && ADD_CODE(label) && ADD_CODE("$same\n");
+
+		ADD_CODE("JUMPIFNEQ $") && ADD_CODE(label) && ADD_CODE("$nonil") && ADD_CODE(" GF@%stmp1%type string@nil\n") &&
+		ADD_CODE("EXIT int@") && ADD_CODE(STR(ERROR_SEMANTIC_RUNTIME)) && ADD_CODE("\n") &&
+		ADD_CODE("LABEL $") && ADD_CODE(label) && ADD_CODE("$nonil\n");
 	}
 
 	ret &=
@@ -498,8 +531,9 @@ bool generate_pop_return()
 		ADD_LINE("POPS LF@%retval");
 }
 
-bool generate_if_begin(char* label)
+bool generate_if_begin(char* label, size_t* pos)
 {
+	*pos = GET_POS();
 	return
 		ADD_LINE("# If BEGIN") &&
 		ADD_LINE("TYPE GF@%exp_result%type GF@%exp_result") &&
@@ -507,7 +541,8 @@ bool generate_if_begin(char* label)
 		ADD_CODE("JUMPIFEQ $") && ADD_CODE(label) && ADD_CODE("%int GF@%exp_result%type string@int\n") &&
 		ADD_CODE("JUMPIFEQ $") && ADD_CODE(label) && ADD_CODE("%float GF@%exp_result%type string@float\n") &&
 		ADD_CODE("JUMPIFEQ $") && ADD_CODE(label) && ADD_CODE("%string GF@%exp_result%type string@string\n") &&
-		ADD_CODE("EXIT int@") && ADD_CODE(STR(ERROR_SEMANTIC_RUNTIME)) && ADD_CODE("\n") &&//nil
+		//ADD_CODE("EXIT int@") && ADD_CODE(STR(ERROR_SEMANTIC_RUNTIME)) && ADD_CODE("\n") &&//nil
+		ADD_CODE("JUMP $") && ADD_CODE(label) && ADD_CODE("%ifend\n") &&//nil - false
 
 		ADD_CODE("LABEL $") && ADD_CODE(label) && ADD_CODE("%string\n") &&
 		ADD_LINE("STRLEN GF@%exp_result GF@%exp_result") &&
@@ -527,16 +562,16 @@ bool generate_if_begin(char* label)
 bool generate_else(char* label)
 {
 	return
-		ADD_CODE("JUMP ") && ADD_CODE(label) && ADD_CODE("%end\n") &&
+		ADD_CODE("JUMP $") && ADD_CODE(label) && ADD_CODE("%end\n") &&
 		ADD_LINE("# Else") &&
 		ADD_CODE("LABEL $") && ADD_CODE(label) && ADD_CODE("%else\n");
 }
 bool generate_if_end(char* label, bool has_else)
 {
 	return
-		ADD_CODE("JUMP ") && ADD_CODE(label) && ADD_CODE("%end\n") &&
+		ADD_CODE("JUMP $") && ADD_CODE(label) && ADD_CODE("%end\n") &&
 		ADD_CODE("LABEL $") && ADD_CODE(label) && ADD_CODE("%ifend\n") &&
-		(has_else ? (ADD_CODE("JUMP ") && ADD_CODE(label) && ADD_CODE("%else\n")) : 1) &&
+		(has_else ? (ADD_CODE("JUMP $") && ADD_CODE(label) && ADD_CODE("%else\n")) : 1) &&
 		ADD_CODE("LABEL $") && ADD_CODE(label) && ADD_CODE("%end\n") &&
 		ADD_LINE("# If END");
 }
@@ -556,7 +591,8 @@ bool generate_while_loop(char* label)
 		ADD_CODE("JUMPIFEQ $") && ADD_CODE(label) && ADD_CODE("%int GF@%exp_result%type string@int\n") &&
 		ADD_CODE("JUMPIFEQ $") && ADD_CODE(label) && ADD_CODE("%float GF@%exp_result%type string@float\n") &&
 		ADD_CODE("JUMPIFEQ $") && ADD_CODE(label) && ADD_CODE("%string GF@%exp_result%type string@string\n") &&
-		ADD_CODE("EXIT int@") && ADD_CODE(STR(ERROR_SEMANTIC_RUNTIME)) && ADD_CODE("\n") &&//nil
+		//ADD_CODE("EXIT int@") && ADD_CODE(STR(ERROR_SEMANTIC_RUNTIME)) && ADD_CODE("\n") &&//nil
+		ADD_CODE("JUMP $") && ADD_CODE(label) && ADD_CODE("%end\n") &&//nil - false
 
 		ADD_CODE("LABEL $") && ADD_CODE(label) && ADD_CODE("%string\n") &&
 		ADD_LINE("STRLEN GF@%exp_result GF@%exp_result") &&
@@ -609,6 +645,11 @@ bool generate_fnc_return_set_var(char* label, bool scope)
 {
 	return
 		(scope ? ADD_CODE("MOVE LF@%retval GF@") : ADD_CODE("MOVE LF@%retval LF@")) && ADD_CODE(label) && ADD_CODE("\n");
+}
+bool generate_fnc_return(char* label)
+{
+	return
+		ADD_CODE("JUMP $") && ADD_CODE(label) && ADD_CODE("%return\n");
 }
 
 bool generate_fnc_end(char* label)

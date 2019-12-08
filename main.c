@@ -44,8 +44,8 @@ int main() {
   //exit(0);
   err = prog();
   if (err != NO_ERROR) {
-      fprintf(stderr, "%d\n", err);
-    DEBUG_PRINT("_____PARSING ENDED WITH ERROR %d_____\n", err);
+      //fprintf(stderr, "%d\n", err);
+    //DEBUG_PRINT("_____PARSING ENDED WITH ERROR %d_____\n", err);
     return err;
   }
   //print_sym_tab(table);
@@ -55,8 +55,8 @@ int main() {
   }
   generator_free();
 
-  fprintf(stderr,"\n");
-  DEBUG_PRINT("_____PARSING ENDED SUCCESSFULLY_____\n");
+  //fprintf(stderr,"\n");
+  //DEBUG_PRINT("_____PARSING ENDED SUCCESSFULLY_____\n");
   free_symtab(table, 0);
   free(table);
 

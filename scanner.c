@@ -243,6 +243,7 @@ int get_next_token_internal(Token *token)
 				else if(c == '\n')
 				{
 					state = STATE_INITIAL;
+					space_count = 0;
 					first_token = true;
 				}
 				else
@@ -697,8 +698,7 @@ int get_next_token_internal(Token *token)
 				break;
 		}
 	}
-/*
-#if defined(//DEBUG) && DEBUG > 0
+/*#if defined(DEBUG) && DEBUG > 0
 	if(c != EOF)
 	{
 		if(token->type == TypeString || token->type == TypeVariable || token->type == TypeKeyword || token->type == TypeDocString)

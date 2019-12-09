@@ -246,7 +246,7 @@ int expression_eval(int fction_switch, int pre_token_switch){
         break;
       default:
 
-        if (act_tok.type == TypeNewLine || act_tok.type == TypeColon) {
+        if ((act_tok.type == TypeNewLine || act_tok.type == TypeColon) && expr_stack.top->type != TypeLeftBracket ) {
           ////fprintf(stderr,"FOUND NEWLINE OR COLON\n");
           return NO_ERROR;
         }
@@ -529,7 +529,7 @@ int check_operators_and_operands_syntax(Type operator, int fction_switch){
       return NO_ERROR;
     }
     else {
-      return ERROR_SYNTAX;
+      return ERROR_SEMANTIC_RUNTIME;
     }
   }
   else if((variable) && (operator == TypeEquality || operator == TypeUnEquality || operator == TypeGreater ||

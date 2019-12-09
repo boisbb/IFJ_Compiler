@@ -1,30 +1,50 @@
-P plus 
-M minus
-MUL multiply
-DEV devide
-LB left bracket
-RB right bracket
-COM comma
-COL colon
-TAB tab
-E equals/assignment
-EQ equality
-N neagtion
-NE not equal
-L lesser
-LE less or equal
-G greater
-GE greater or equal
-VAR variable
-INT int
-FLO float
-FLE float_e
-FLEN float_en
-BC1 block comment in 1 
-BC2 block comment in 2
-BC block comment
-BCO1 block comment out 1
-BCO2 block comment out 2
-LC line comment
-I indentation
-STRINGS -> to be added
+S 	start
+P 	plus 
+M 	minus
+MUL 	multiply
+DIV 	divide
+FDIV 	floor division
+LB 	left bracket
+RB 	right bracket
+COM 	comma
+COL 	colon
+TAB 	tab
+E 	equals/assignment
+EQ 	equality
+N 	neagtion
+NE 	not equal
+L 	lesser
+LE 	less or equal
+G 	greater
+GE 	greater or equal
+VAR 	variable
+INT 	int
+FLO 	float
+FLE 	float_e
+FLEN 	float_en
+BC1 	block comment in 1 
+BC2 	block comment in 2
+BC 	block comment
+BCO1 	block comment out 1
+BCO2 	block comment out 2
+LC 	line comment
+FT 	first token
+SC 	space count
+S.Top 	space stack top
+STR 	string
+STRH1 	string hexa 1
+STRH2	string hexa 2
+STRS 	string special
+STRE	string end
+INDC	indent counter
+INDT	indent
+DDT	dedent
+LC 	line comment
+DSI1	documentation string in 1
+DSI2	documentation string in 2
+DSTR	documentation string
+DSTRS 	documentation string special
+DSO1	documentation string out 1	
+DSO2	documentation string out 2
+DEND	documentation string end
+EOL	end of line

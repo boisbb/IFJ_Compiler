@@ -155,6 +155,9 @@ int print_fct_call(Token *token, hSymtab *act_table, int in_function){
 }
 
 // Basic without expressions yet // add code generating
+//  <fction_call> -> ID <arg_n> )
+//  <arg_n> -> , ID <arg_n>
+//  <arg_n> -> epsilon
 int fction_call(Token *token, hSymtab *act_table, int in_function){
   Type prev;
   //fprintf(stderr, "a\n");
@@ -369,7 +372,8 @@ int fction_call(Token *token, hSymtab *act_table, int in_function){
   return ERROR_INTERNAL;
 }
 
-
+// <statement_body> -> <command> <statement_body>
+// <statement_body> -> EOL DEDENT
 int statement_body(Token *token, hSymtab *act_table, int in_function, char* fction_name, size_t pos){
 
   if (GET_TOKEN_CHECK_EOF(token)) {
@@ -422,7 +426,9 @@ int statement_body(Token *token, hSymtab *act_table, int in_function, char* fcti
   return NO_ERROR;
 }
 
-
+// <statement> -> if expression : EOL INDENT <statement_body> EOL DEDENT else : EOL INDENT <statement_body>
+// <statement> -> if expression : EOL INDENT <statement_body>
+// <statement> -> while expression : EOL INDENT <statement_body>
 int statement(Token *token, hSymtab *act_table, int in_function, char* fction_name, size_t pos){
   bool else_ = false;
   bool if_ = false;
@@ -622,6 +628,9 @@ else {
 
 
 
+// <assignment> -> expression
+// <assignment> -> fct( <fct_call>
+// <assignment> -> <predef_fct>
 
 int assignment(Token *var, Token *value, hSymtab *act_table, int in_function, size_t pos){
 
@@ -733,7 +742,13 @@ int assignment(Token *var, Token *value, hSymtab *act_table, int in_function, si
     return err;
 }
 
-
+// <command> -> ID = <asssignment>
+// <command> -> fct( <fct_call>
+// <command> -> expression
+// <command> -> if <statement>
+// <command> -> while <statement>
+// <command> -> def <fction_start>
+// <command> -> <body>
 int command(Token *token, hSymtab *act_table, int in_function, char* fction_name, int statement_switch, size_t pos){
 
   ////fprintf(stderr, "%s\n", operNamesP[token->type]);
@@ -842,6 +857,8 @@ int command(Token *token, hSymtab *act_table, int in_function, char* fction_name
   return ERROR_INTERNAL;
 }
 
+
+// <body> -> <command>
 int body(Token *token, hSymtab *act_table){
   while (1) {
       if (err == NO_ERROR) {
@@ -1207,7 +1224,6 @@ int fction_start(Token *token, hSymtab *act_table){
 
 // FOR NOW EQUAL TO <prog>
 // <prog> -> <body>
-// <prog> -> <fction_start> INDENT <body> DEDENT <body>
 int prog() {
   Token token;
   scanner_init();

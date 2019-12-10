@@ -747,7 +747,7 @@ int command(Token *token, hSymtab *act_table, int in_function, char* fction_name
     err = expression(NULL, token, NULL, act_table);
     return err;
   }
-  else if (strcmp((char*)token->data, "def") == 0 && statement_switch == 0) {
+  else if ((char*)token->data && strcmp((char*)token->data, "def") == 0 && statement_switch == 0) {
 
     if(in_function == 1){ //def cannot be in fuction
       return ERROR_SYNTAX;
@@ -1175,6 +1175,8 @@ int prog() {
       generate_main_end();
       return NO_ERROR;
   }
+
+
 
   body(&token, table);
   if (err == NO_ERROR){

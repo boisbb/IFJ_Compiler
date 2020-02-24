@@ -1,2 +1,0 @@
-def ahoj(x:
-    return
